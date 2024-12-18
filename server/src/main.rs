@@ -1,37 +1,8 @@
 use std::net::TcpListener;
 use std::net::TcpStream;
 use std::io::prelude::*;
-#[derive(Debug)]
-enum HTTP_METHOD{
-    POST,
-    GET,
-}
-#[derive(Debug)]
-struct http_req{
-    uri: String,
-    method: HTTP_METHOD,
-}
-impl http_req{
-    fn new(method: HTTP_METHOD, uri: &str)->Self{
-        Self{
-            uri: String::from(uri),
-            method: method,
-        }
-    }
-}
-fn handle_http(line:&str)-> http_req{
-   let mut words = line.split_whitespace();
-   let nw = words.next().unwrap();
-   if(nw.len()!= 3){
-        panic!("unvalid http header size");
-   }
-
-   match nw{
-        "GET" => http_req::new(HTTP_METHOD::GET, words.next().unwrap()),
-        "POST" => http_req::new(HTTP_METHOD::POST, words.next().unwrap()),
-        _ => panic!("unvalid http"),
-   }
-}
+mod http_handler;
+use http_handler::*;
 fn handle_client(mut stream: TcpStream){
     println!("Client Connected");
     let mut buffer = [0;512];
