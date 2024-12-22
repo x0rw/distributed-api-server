@@ -17,11 +17,12 @@ impl http_req{
         }
     }
 }
-pub fn handle_http(line:&str)-> http_req{
-   let mut words = line.split_whitespace();
+pub fn handle_http(proc:String)-> http_req{
+   let mut lines = proc.split("\r\n");
+   let mut words = lines.next().unwrap().split_whitespace();
 
    if words.clone().count()!= 3 {
-    panic!("unvalid http header size");
+    panic!("unvalid http header size{:?}",words.collect::<Vec<_>>());
     }
 
    match words.next(){
