@@ -12,7 +12,6 @@ pub struct http_req{
 struct http_header{
     header: String, //we only own useful Header Features 
 }
-
 impl http_req{
     fn new(method: HTTP_METHOD, uri: &str)->Self{
         Self{
