@@ -10,6 +10,7 @@ mod routes;
 use error::Result;
 use http_handler::*;
 use routes::{Route, RoutesMap};
+
 fn handle_client(mut stream: TcpStream, rm: &RoutesMap) {
     println!("Client Connected");
     let mut buffer = [0; 1000];
@@ -18,19 +19,19 @@ fn handle_client(mut stream: TcpStream, rm: &RoutesMap) {
 
     // println!("{}", buffer_utf8.to_string());
     let handler = handle_http(buffer_utf8.to_string()).unwrap();
-    let mut response = String::from("HTTP/1.1 200 OK\r\n\r\n");
     let uri = handler.uri.as_ref();
+
     let mut build_resp = match rm.get(uri) {
         Route::RouteFound(e) => html_builder::response(HTTP_RESPONSE_CODE::Ok_200, e),
         Route::RouteNotFound(e) => {
             html_builder::response(HTTP_RESPONSE_CODE::MOVED_PERM_301("/".to_string()), e)
         }
     };
+
     build_resp.push_str(handler.get_data());
-    println!("DATA{}DATA", handler.data.clone().unwrap_or_default());
     match handler.method {
         HTTP_METHOD::GET => {}
-        HTTP_METHOD::POST => println!("GETGET"),
+        HTTP_METHOD::POST => {}
     }
     println!("{}", build_resp);
     if let Some(e) = &handler.data {}

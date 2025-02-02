@@ -7,6 +7,8 @@ A simple, lightweight HTTP server written in **pure Rust**, designed for handlin
 - **Route handling** for defining custom endpoints
 - **Preloading routes** to ensure they are ready at startup
 - Lightweight and efficient, written entirely in Rust without external dependencies
+- Custom Error handling
+
  multithreading is not implemented yet
 
 ## Getting Started
@@ -21,7 +23,7 @@ Clone the repository:
 
 ```bash
 git clone https://github.com/x0rw/Rust-Multithreaded-Server.git
-cd Rust-Multithreaded-Server
+cd Rust-Multithreaded-Server/server
 ```
 
 Build the project:
