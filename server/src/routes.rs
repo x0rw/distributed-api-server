@@ -24,13 +24,18 @@ impl RoutesMap {
         self.error_route = route_name.to_string();
         Ok(())
     }
-    pub fn get(&self, k: &str) -> &str {
+    pub fn get(&self, k: &str) -> Route {
         if let Some(e) = self.hm.get(k) {
-            return e;
+            return Route::RouteFound(e);
         } else {
-            let s = self.error_route.clone();
-            let t = self.hm.get(&s).unwrap();
-            return t;
+            let s = self.error_route.as_str();
+            let t = self.hm.get(s).unwrap();
+            return Route::RouteNotFound(t);
         }
     }
+}
+#[derive(Debug)]
+pub enum Route<'a> {
+    RouteFound(&'a str),
+    RouteNotFound(&'a str),
 }

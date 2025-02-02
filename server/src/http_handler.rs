@@ -1,6 +1,7 @@
 use crate::error::{Error, Result};
 use crate::routes;
 use std::collections::HashMap;
+use std::fmt::format;
 #[derive(Debug, PartialEq, Eq)]
 pub enum HTTP_METHOD {
     POST,
@@ -17,6 +18,7 @@ pub struct http_req {
 struct header_options {
     header: HashMap<String, String>, //we only own useful Header Features
 }
+
 impl header_options {
     fn new() -> Self {
         Self {
@@ -27,7 +29,7 @@ impl header_options {
         self.header
             .insert(String::from(option), String::from(value));
     }
-    fn getLenght(self) -> Option<u32> {
+    fn get_lenght(self) -> Option<u32> {
         if let Some(e) = self.header.get("data_len") {
             return Some(e.parse::<u32>().unwrap());
         }
@@ -45,6 +47,12 @@ impl http_req {
             method: method,
             header: header_opt,
             data: r,
+        }
+    }
+    pub fn get_data(&self) -> &str {
+        match &self.data {
+            Some(e) => e.as_ref(),
+            None => "",
         }
     }
 }
@@ -93,7 +101,29 @@ pub fn handle_http(proc: String) -> Result<http_req> {
         _ => Err(Error::UnknowenHttpMethod),
     }
 }
+pub enum HTTP_RESPONSE_CODE {
+    Ok_200,
+    NOTFOUND_404,
+    MOVED_PERM_301(String),
+}
+pub struct html_builder {
+    data: String,
+}
 
+impl html_builder {
+    pub fn response(res_code: HTTP_RESPONSE_CODE, data: &str) -> String {
+        let header_req = match res_code {
+            HTTP_RESPONSE_CODE::Ok_200 => format!("HTTP/1.1 200 OK\r\n\r\n{}", data).to_string(),
+            HTTP_RESPONSE_CODE::NOTFOUND_404 => {
+                format!("HTTP/1.0 404 Not Found\r\n{}", data).to_string()
+            }
+            HTTP_RESPONSE_CODE::MOVED_PERM_301(e) => {
+                format!("HTTP/1.1 301 Moved Permanently\r\nLocation:{}", e).to_string()
+            }
+        };
+        return header_req;
+    }
+}
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -144,7 +174,6 @@ mod tests {
         let http_header = String::from("HACK / HTTP/1.1");
         let http_h = handle_http(http_header);
     }
-
     #[test]
     #[should_panic]
     fn unvalid_header_size() {
