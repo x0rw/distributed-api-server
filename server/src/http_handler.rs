@@ -109,11 +109,11 @@ pub enum HttpResponseCode {
     NotFound404,
     MovedPerm301(String),
 }
-pub struct HtmlBuilder {
+pub struct HttpBuilder {
     data: String,
 }
 
-impl HtmlBuilder {
+impl HttpBuilder {
     pub fn response(res_code: HttpResponseCode, data: &str) -> String {
         let header_req = match res_code {
             HttpResponseCode::Ok200 => format!("HTTP/1.1 200 OK\r\n\r\n{}", data).to_string(),

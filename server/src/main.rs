@@ -23,9 +23,9 @@ fn handle_client(mut stream: TcpStream, rm: &RoutesMap) -> Result<()> {
 
     //check if the requested route exist
     let mut build_resp = match rm.get(uri) {
-        Route::RouteFound(e) => HtmlBuilder::response(HttpResponseCode::Ok200, e),
+        Route::RouteFound(e) => HttpBuilder::response(HttpResponseCode::Ok200, e),
         Route::RouteNotFound(e) => {
-            HtmlBuilder::response(HttpResponseCode::MovedPerm301("/".to_string()), e)
+            HttpBuilder::response(HttpResponseCode::MovedPerm301("/".to_string()), e)
         }
     };
 
