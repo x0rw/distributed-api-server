@@ -11,31 +11,37 @@ use error::Result;
 use http_handler::*;
 use routes::{Route, RoutesMap};
 
-fn handle_client(mut stream: TcpStream, rm: &RoutesMap) {
+fn handle_client(mut stream: TcpStream, rm: &RoutesMap) -> Result<()> {
     println!("Client Connected");
     let mut buffer = [0; 1000];
-    stream.read(&mut buffer).unwrap();
+    stream.read(&mut buffer)?;
     let buffer_utf8 = String::from_utf8_lossy(&buffer[..]);
 
     // println!("{}", buffer_utf8.to_string());
-    let handler = handle_http(buffer_utf8.to_string()).unwrap();
+    let handler = handle_http(buffer_utf8.to_string())?;
     let uri = handler.uri.as_ref();
 
+    //check if the requested route exist
     let mut build_resp = match rm.get(uri) {
-        Route::RouteFound(e) => html_builder::response(HTTP_RESPONSE_CODE::Ok_200, e),
+        Route::RouteFound(e) => HtmlBuilder::response(HttpResponseCode::Ok200, e),
         Route::RouteNotFound(e) => {
-            html_builder::response(HTTP_RESPONSE_CODE::MOVED_PERM_301("/".to_string()), e)
+            HtmlBuilder::response(HttpResponseCode::MovedPerm301("/".to_string()), e)
         }
     };
 
-    build_resp.push_str(handler.get_data());
-    match handler.method {
-        HTTP_METHOD::GET => {}
-        HTTP_METHOD::POST => {}
+    if let Some(e) = &handler.data {
+        build_resp.push_str(e);
     }
-    println!("{}", build_resp);
-    if let Some(e) = &handler.data {}
-    let stream_send = stream.write(build_resp.as_bytes());
+    match handler.method {
+        HttpMethod::GET => {}
+        HttpMethod::POST => {
+            println!("Recieved data: {}", handler.get_data());
+        }
+    }
+    // println!("{}", build_resp);
+    let stream_send = stream.write(build_resp.as_bytes())?;
+    println!("{stream_send} Bytes sent to the client");
+    Ok(())
 }
 fn main() -> Result<()> {
     let mut pub_routes = crate::routes::RoutesMap::new();
@@ -49,7 +55,7 @@ fn main() -> Result<()> {
 
         //        thread::sleep(Duration::from_millis(4000));
 
-        handle_client(stream, &routes_ref);
+        handle_client(stream, &routes_ref).unwrap();
     }
     Ok(())
 }

@@ -3,23 +3,23 @@ use crate::routes;
 use std::collections::HashMap;
 use std::fmt::format;
 #[derive(Debug, PartialEq, Eq)]
-pub enum HTTP_METHOD {
+pub enum HttpMethod {
     POST,
     GET,
 }
 #[derive(Debug)]
-pub struct http_req {
+pub struct HttpRequest {
     pub uri: String,
-    pub method: HTTP_METHOD,
-    pub header: header_options,
+    pub method: HttpMethod,
+    pub header: HeaderOptions,
     pub data: Option<String>,
 }
 #[derive(Debug)]
-struct header_options {
+struct HeaderOptions {
     header: HashMap<String, String>, //we only own useful Header Features
 }
 
-impl header_options {
+impl HeaderOptions {
     fn new() -> Self {
         Self {
             header: HashMap::new(),
@@ -36,8 +36,8 @@ impl header_options {
         None
     }
 }
-impl http_req {
-    fn new(method: HTTP_METHOD, uri: &str, header_opt: header_options, data: Option<&str>) -> Self {
+impl HttpRequest {
+    fn new(method: HttpMethod, uri: &str, header_opt: HeaderOptions, data: Option<&str>) -> Self {
         let r: Option<String> = match data {
             Some(e) => Some(e.to_string()),
             None => None,
@@ -56,16 +56,19 @@ impl http_req {
         }
     }
 }
-pub fn handle_http(proc: String) -> Result<http_req> {
-    let mut sp = proc.split("\r\n");
+pub fn handle_http(proc: String) -> Result<HttpRequest> {
+    let ref_s = &proc;
+    let mut sp = ref_s.split("\r\n");
     let req = sp.next().ok_or(Error::NullHeaderReq)?;
 
     let mut words = req.split_whitespace();
     if words.clone().count() != 3 {
+        //cloning is cheap because we clone the internal state of an
+        //iterator type &str
         return Err(Error::InvalidHttpReqSize);
     }
     // init options (for performance i should move it outside later and reuse the same structure)
-    let mut header_opt = header_options::new();
+    let mut header_opt = HeaderOptions::new();
     let mut req_data: Option<&str> = None;
     while let Some(e) = sp.next() {
         if e.contains(":") {
@@ -86,14 +89,14 @@ pub fn handle_http(proc: String) -> Result<http_req> {
     }
 
     match words.next() {
-        Some("GET") => Ok(http_req::new(
-            HTTP_METHOD::GET,
+        Some("GET") => Ok(HttpRequest::new(
+            HttpMethod::GET,
             words.next().unwrap(),
             header_opt,
             req_data,
         )),
-        Some("POST") => Ok(http_req::new(
-            HTTP_METHOD::POST,
+        Some("POST") => Ok(HttpRequest::new(
+            HttpMethod::POST,
             words.next().unwrap(),
             header_opt,
             req_data,
@@ -101,23 +104,23 @@ pub fn handle_http(proc: String) -> Result<http_req> {
         _ => Err(Error::UnknowenHttpMethod),
     }
 }
-pub enum HTTP_RESPONSE_CODE {
-    Ok_200,
-    NOTFOUND_404,
-    MOVED_PERM_301(String),
+pub enum HttpResponseCode {
+    Ok200,
+    NotFound404,
+    MovedPerm301(String),
 }
-pub struct html_builder {
+pub struct HtmlBuilder {
     data: String,
 }
 
-impl html_builder {
-    pub fn response(res_code: HTTP_RESPONSE_CODE, data: &str) -> String {
+impl HtmlBuilder {
+    pub fn response(res_code: HttpResponseCode, data: &str) -> String {
         let header_req = match res_code {
-            HTTP_RESPONSE_CODE::Ok_200 => format!("HTTP/1.1 200 OK\r\n\r\n{}", data).to_string(),
-            HTTP_RESPONSE_CODE::NOTFOUND_404 => {
+            HttpResponseCode::Ok200 => format!("HTTP/1.1 200 OK\r\n\r\n{}", data).to_string(),
+            HttpResponseCode::NotFound404 => {
                 format!("HTTP/1.0 404 Not Found\r\n{}", data).to_string()
             }
-            HTTP_RESPONSE_CODE::MOVED_PERM_301(e) => {
+            HttpResponseCode::MovedPerm301(e) => {
                 format!("HTTP/1.1 301 Moved Permanently\r\nLocation:{}", e).to_string()
             }
         };
@@ -125,6 +128,7 @@ impl html_builder {
     }
 }
 #[cfg(test)]
+#[warn(clippy::used_underscore_binding)]
 mod tests {
     use super::*;
     #[test]
@@ -133,7 +137,7 @@ mod tests {
         let http_h = handle_http(http_header).unwrap();
 
         assert_eq!(http_h.uri, "/");
-        assert_eq!(http_h.method, HTTP_METHOD::GET);
+        assert_eq!(http_h.method, HttpMethod::GET);
     }
     #[test]
     fn valid_big_http_request() {
@@ -156,7 +160,7 @@ mod tests {
         let http_h = handle_http(http_header).unwrap();
         assert_eq!(http_h.uri, "/f");
         assert_eq!(http_h.data, None);
-        assert_eq!(http_h.method, HTTP_METHOD::GET);
+        assert_eq!(http_h.method, HttpMethod::GET);
     }
 
     #[test]
@@ -165,19 +169,19 @@ mod tests {
         let http_h = handle_http(http_header).unwrap();
 
         assert_eq!(http_h.uri, "/");
-        assert_eq!(http_h.method, HTTP_METHOD::POST);
+        assert_eq!(http_h.method, HttpMethod::POST);
     }
 
     #[test]
     #[should_panic]
     fn unvalid_http_method_request() {
         let http_header = String::from("HACK / HTTP/1.1");
-        let http_h = handle_http(http_header);
+        let _http_h = handle_http(http_header).unwrap();
     }
     #[test]
     #[should_panic]
     fn unvalid_header_size() {
         let http_header = String::from("POST / HTTP/1.1 HELLO");
-        let http_h = handle_http(http_header);
+        let _http_h = handle_http(http_header).unwrap();
     }
 }
