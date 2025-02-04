@@ -1,10 +1,19 @@
 use crate::{error::Result, Error};
 use std::{collections::HashMap, fs::File, io::Read};
+#[derive(Debug)]
+pub enum RouteType {
+    Data(String),
+    Redirect(String, bool),
+    NotFound,
+}
 pub struct RoutesMap {
-    hm: HashMap<String, String>,
+    hm: HashMap<String, RouteType>,
     error_route: String,
 }
 impl RoutesMap {
+    pub fn getErrorRoute(&self) -> &str {
+        &self.error_route
+    }
     pub fn new() -> Self {
         Self {
             hm: HashMap::new(),
@@ -16,7 +25,7 @@ impl RoutesMap {
         let mut fi = File::open(file)?;
         let mut contents = String::new();
         fi.read_to_string(&mut contents)?;
-        self.hm.insert(route.to_string(), contents);
+        self.hm.insert(route.to_string(), RouteType::Data(contents));
         Ok(())
     }
     pub fn error_page(&mut self, route_name: &str, file: &str) -> Result<()> {
@@ -24,18 +33,11 @@ impl RoutesMap {
         self.error_route = route_name.to_string();
         Ok(())
     }
-    pub fn get(&self, k: &str) -> Route {
+    pub fn get(&self, k: &str) -> &RouteType {
         if let Some(e) = self.hm.get(k) {
-            return Route::RouteFound(e);
+            return e;
         } else {
-            let s = self.error_route.as_str();
-            let t = self.hm.get(s).unwrap();
-            return Route::RouteNotFound(t);
+            return &RouteType::NotFound;
         }
     }
-}
-#[derive(Debug)]
-pub enum Route<'a> {
-    RouteFound(&'a str),
-    RouteNotFound(&'a str),
 }

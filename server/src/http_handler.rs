@@ -1,5 +1,5 @@
 use crate::error::{Error, Result};
-use crate::routes;
+use crate::routes::{RouteType, RoutesMap};
 use std::collections::HashMap;
 use std::fmt::format;
 #[derive(Debug, PartialEq, Eq)]
@@ -61,6 +61,7 @@ pub fn handle_http(proc: String) -> Result<HttpRequest> {
     let mut sp = ref_s.split("\r\n");
     let req = sp.next().ok_or(Error::NullHeaderReq)?;
 
+    println!("{}", proc.clone());
     let mut words = req.split_whitespace();
     if words.clone().count() != 3 {
         //cloning is cheap because we clone the internal state of an
@@ -110,21 +111,34 @@ pub enum HttpResponseCode {
     MovedPerm301(String),
 }
 pub struct HttpBuilder {
-    data: String,
+    pub data: String,
 }
 
 impl HttpBuilder {
-    pub fn response(res_code: HttpResponseCode, data: &str) -> String {
-        let header_req = match res_code {
-            HttpResponseCode::Ok200 => format!("HTTP/1.1 200 OK\r\n\r\n{}", data).to_string(),
-            HttpResponseCode::NotFound404 => {
-                format!("HTTP/1.0 404 Not Found\r\n{}", data).to_string()
-            }
-            HttpResponseCode::MovedPerm301(e) => {
-                format!("HTTP/1.1 301 Moved Permanently\r\nLocation:{}", e).to_string()
-            }
+    pub fn build(
+        route: &RouteType,
+        method: &HttpMethod,
+        data: &str,
+        router: &RoutesMap,
+    ) -> HttpBuilder {
+        let mut httpbuilt = HttpBuilder {
+            data: match route {
+                RouteType::NotFound => {
+                    format!("HTTP/1.0 404 Not Founddd\r\n{}", router.getErrorRoute()).to_string()
+                }
+                RouteType::Data(html) => format!("HTTP/1.1 200 OK\r\n\r\n{}", html).to_string(),
+                RouteType::Redirect(e, _) => {
+                    format!("HTTP/1.1 301 Moved Permanently\r\nLocation:{}", e).to_string()
+                }
+            },
         };
-        return header_req;
+        match method {
+            HttpMethod::GET => return httpbuilt,
+            HttpMethod::POST => {
+                httpbuilt.data.push_str(data);
+                return httpbuilt;
+            }
+        }
     }
 }
 #[cfg(test)]

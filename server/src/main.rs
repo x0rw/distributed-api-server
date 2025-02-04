@@ -9,9 +9,9 @@ mod http_handler;
 mod routes;
 use error::Result;
 use http_handler::*;
-use routes::{Route, RoutesMap};
+use routes::RoutesMap;
 
-fn handle_client(mut stream: TcpStream, rm: &RoutesMap) -> Result<()> {
+fn handle_client(mut stream: TcpStream, router: &RoutesMap) -> Result<()> {
     println!("Client Connected");
     let mut buffer = [0; 1000];
     stream.read(&mut buffer)?;
@@ -22,24 +22,16 @@ fn handle_client(mut stream: TcpStream, rm: &RoutesMap) -> Result<()> {
     let uri = handler.uri.as_ref();
 
     //check if the requested route exist
-    let mut build_resp = match rm.get(uri) {
-        Route::RouteFound(e) => HttpBuilder::response(HttpResponseCode::Ok200, e),
-        Route::RouteNotFound(e) => {
-            HttpBuilder::response(HttpResponseCode::MovedPerm301("/".to_string()), e)
-        }
-    };
+    let route = router.get(uri);
+    let builder = HttpBuilder::build(
+        route,
+        &handler.method,
+        &handler.data.unwrap_or_default(),
+        router,
+    );
 
-    if let Some(e) = &handler.data {
-        build_resp.push_str(e);
-    }
-    match handler.method {
-        HttpMethod::GET => {}
-        HttpMethod::POST => {
-            println!("Recieved data: {}", handler.get_data());
-        }
-    }
-    // println!("{}", build_resp);
-    let stream_send = stream.write(build_resp.as_bytes())?;
+    println!("{}", builder.data.clone());
+    let stream_send = stream.write(builder.data.as_bytes())?;
     println!("{stream_send} Bytes sent to the client");
     Ok(())
 }
@@ -55,7 +47,7 @@ fn main() -> Result<()> {
 
         //        thread::sleep(Duration::from_millis(4000));
 
-        handle_client(stream, &routes_ref).unwrap();
+        handle_client(stream, &routes_ref).expect("fdfdf");
     }
     Ok(())
 }
