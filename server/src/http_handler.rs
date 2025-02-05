@@ -1,7 +1,9 @@
 use crate::error::{Error, Result};
 use crate::routes::{RouteType, RoutesMap};
+use core::fmt;
 use std::collections::HashMap;
-use std::fmt::format;
+use std::fmt::{format, Display};
+use std::fs::write;
 #[derive(Debug, PartialEq, Eq)]
 pub enum HttpMethod {
     POST,
@@ -11,12 +13,24 @@ pub enum HttpMethod {
 pub struct HttpRequest {
     pub uri: String,
     pub method: HttpMethod,
+    pub params: Option<Vec<String>>,
     pub header: HeaderOptions,
     pub data: Option<String>,
 }
 #[derive(Debug)]
-struct HeaderOptions {
-    header: HashMap<String, String>, //we only own useful Header Features
+pub struct HeaderOptions {
+    pub header: HashMap<String, String>, //we only own useful Header Features
+}
+impl std::fmt::Display for HeaderOptions {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let b = self
+            .header
+            .iter()
+            .map(|(k, v)| format!("{k} => {v}\n"))
+            .collect::<String>();
+        println!("{b}");
+        Ok(())
+    }
 }
 
 impl HeaderOptions {
@@ -36,18 +50,34 @@ impl HeaderOptions {
         None
     }
 }
+
 impl HttpRequest {
-    fn new(method: HttpMethod, uri: &str, header_opt: HeaderOptions, data: Option<&str>) -> Self {
+    fn new(
+        method: HttpMethod,
+        uri: &str,
+        header_opt: HeaderOptions,
+        data: Option<&str>,
+    ) -> Result<Self> {
         let r: Option<String> = match data {
             Some(e) => Some(e.to_string()),
             None => None,
         };
-        Self {
+        let e = match uri.split("?").nth(1) {
+            Some(e) => Some(
+                e.split("&")
+                    .map(|x| format!("{x}"))
+                    .collect::<Vec<String>>(),
+            ),
+            None => None,
+        };
+        //println!("{:#?}", e);
+        Ok(Self {
             uri: String::from(uri),
             method: method,
+            params: e,
             header: header_opt,
             data: r,
-        }
+        })
     }
     pub fn get_data(&self) -> &str {
         match &self.data {
@@ -61,7 +91,7 @@ pub fn handle_http(proc: String) -> Result<HttpRequest> {
     let mut sp = ref_s.split("\r\n");
     let req = sp.next().ok_or(Error::NullHeaderReq)?;
 
-    println!("{}", proc.clone());
+    //println!("{}", proc.clone());
     let mut words = req.split_whitespace();
     if words.clone().count() != 3 {
         //cloning is cheap because we clone the internal state of an
@@ -88,33 +118,39 @@ pub fn handle_http(proc: String) -> Result<HttpRequest> {
             break;
         }
     }
-
     match words.next() {
         Some("GET") => Ok(HttpRequest::new(
             HttpMethod::GET,
             words.next().unwrap(),
             header_opt,
             req_data,
-        )),
+        )?),
         Some("POST") => Ok(HttpRequest::new(
             HttpMethod::POST,
             words.next().unwrap(),
             header_opt,
             req_data,
-        )),
+        )?),
         _ => Err(Error::UnknowenHttpMethod),
     }
 }
+
+//currentlu not in use
 pub enum HttpResponseCode {
     Ok200,
     NotFound404,
     MovedPerm301(String),
 }
+
+//builds http request
 pub struct HttpBuilder {
     pub data: String,
 }
 
 impl HttpBuilder {
+    pub fn build_badrequest() -> String {
+        format!("HTTP/1.1 400 Bad Request\r\n").to_string()
+    }
     pub fn build(
         route: &RouteType,
         method: &HttpMethod,
@@ -154,6 +190,21 @@ mod tests {
         assert_eq!(http_h.method, HttpMethod::GET);
     }
     #[test]
+    fn http_req_test() {
+        let testvecs = vec![
+            "/?dsd=fefd&df=fffff",
+            "/Article?id=34&username=fdfdf",
+            "/Article?dsd=fefd&df=fffff",
+        ];
+        for test_uri in testvecs {
+            let _a = HttpRequest::new(
+                HttpMethod::POST,
+                "?dsd=fefd&df=fffff",
+                HeaderOptions::new(),
+                None,
+            );
+        }
+    }
     fn valid_big_http_request() {
         let http_header = String::from("GET /f HTTP/1.1\r\n
             Host: 127.0.0.1:1111\r\n
@@ -199,3 +250,6 @@ mod tests {
         let _http_h = handle_http(http_header).unwrap();
     }
 }
+// testing the http parsing using NetCat
+// echo -ne "GET / HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Custom-Header: \x80\x81\x82\r\n\r\n" | nc
+// 127.0.0.1 11112

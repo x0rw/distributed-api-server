@@ -18,7 +18,13 @@ fn handle_client(mut stream: TcpStream, router: &RoutesMap) -> Result<()> {
     let buffer_utf8 = String::from_utf8_lossy(&buffer[..]);
 
     // println!("{}", buffer_utf8.to_string());
-    let handler = handle_http(buffer_utf8.to_string())?;
+    let handler = match handle_http(buffer_utf8.to_string()) {
+        Ok(e) => e,
+        Err(e) => {
+            stream.write(HttpBuilder::build_badrequest().as_bytes())?;
+            return Ok(()); // errors in handle_http arent that serious
+        }
+    };
     let uri = handler.uri.as_ref();
 
     //check if the requested route exist
@@ -30,7 +36,7 @@ fn handle_client(mut stream: TcpStream, router: &RoutesMap) -> Result<()> {
         router,
     );
 
-    println!("{}", builder.data.clone());
+    //println!("{}", handler.header.);
     let stream_send = stream.write(builder.data.as_bytes())?;
     println!("{stream_send} Bytes sent to the client");
     Ok(())
