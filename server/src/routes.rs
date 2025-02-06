@@ -5,12 +5,22 @@ pub enum RouteType {
     Data(String),
     Redirect(String, bool),
     NotFound,
+    Controller(fn(Vec<String>) -> String),
 }
 pub struct RoutesMap {
     hm: HashMap<String, RouteType>,
     error_route: String,
 }
 impl RoutesMap {
+    pub fn add_controller(
+        &mut self,
+        route: &str,
+        controller: fn(Vec<String>) -> String,
+    ) -> Result<()> {
+        self.hm
+            .insert(route.to_string(), RouteType::Controller(controller.clone()));
+        Ok(())
+    }
     pub fn getErrorRoute(&self) -> &str {
         &self.error_route
     }
@@ -34,7 +44,10 @@ impl RoutesMap {
         Ok(())
     }
     pub fn get(&self, k: &str) -> &RouteType {
+        println!("Client Requesting: {}", k);
+
         if let Some(e) = self.hm.get(k) {
+            println!("Found Route: {:?}", e);
             return e;
         } else {
             return &RouteType::NotFound;

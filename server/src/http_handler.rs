@@ -70,9 +70,12 @@ impl HttpRequest {
             ),
             None => None,
         };
-        //println!("{:#?}", e);
+        let mut url = uri;
+        if let Some(e) = uri.split_once("?") {
+            url = e.0;
+        };
         Ok(Self {
-            uri: String::from(uri),
+            uri: String::from(url),
             method: method,
             params: e,
             header: header_opt,
@@ -86,6 +89,7 @@ impl HttpRequest {
         }
     }
 }
+
 pub fn handle_http(proc: String) -> Result<HttpRequest> {
     let ref_s = &proc;
     let mut sp = ref_s.split("\r\n");
@@ -151,27 +155,26 @@ impl HttpBuilder {
     pub fn build_badrequest() -> String {
         format!("HTTP/1.1 400 Bad Request\r\n").to_string()
     }
-    pub fn build(
-        route: &RouteType,
-        method: &HttpMethod,
-        data: &str,
-        router: &RoutesMap,
-    ) -> HttpBuilder {
+    pub fn build(route: &RouteType, handler: HttpRequest, router: &RoutesMap) -> HttpBuilder {
         let mut httpbuilt = HttpBuilder {
             data: match route {
                 RouteType::NotFound => {
-                    format!("HTTP/1.0 404 Not Founddd\r\n{}", router.getErrorRoute()).to_string()
+                    format!("HTTP/1.0 404 Not Found\r\n{}", router.getErrorRoute()).to_string()
                 }
                 RouteType::Data(html) => format!("HTTP/1.1 200 OK\r\n\r\n{}", html).to_string(),
                 RouteType::Redirect(e, _) => {
                     format!("HTTP/1.1 301 Moved Permanently\r\nLocation:{}", e).to_string()
                 }
+                RouteType::Controller(func) => {
+                    let params = handler.params;
+                    func(params.unwrap_or_default())
+                }
             },
         };
-        match method {
+        match handler.method {
             HttpMethod::GET => return httpbuilt,
             HttpMethod::POST => {
-                httpbuilt.data.push_str(data);
+                //httpbuilt.data.push_str(handler.data.unwrap_or_default());
                 return httpbuilt;
             }
         }
