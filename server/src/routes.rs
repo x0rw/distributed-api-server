@@ -1,11 +1,11 @@
-use crate::{error::Result, Error};
+use crate::{error::Result, http_handler, Error};
 use std::{collections::HashMap, fs::File, io::Read};
 #[derive(Debug)]
 pub enum RouteType {
     Data(String),
     Redirect(String, bool),
     NotFound,
-    Controller(fn(Vec<String>) -> String),
+    Controller(fn(http_handler::Data) -> String),
 }
 pub struct RoutesMap {
     hm: HashMap<String, RouteType>,
@@ -15,10 +15,10 @@ impl RoutesMap {
     pub fn add_controller(
         &mut self,
         route: &str,
-        controller: fn(Vec<String>) -> String,
+        controller: fn(http_handler::Data) -> String,
     ) -> Result<()> {
         self.hm
-            .insert(route.to_string(), RouteType::Controller(controller.clone()));
+            .insert(route.to_string(), RouteType::Controller(controller));
         Ok(())
     }
     pub fn getErrorRoute(&self) -> &str {

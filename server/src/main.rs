@@ -12,7 +12,7 @@ use error::Result;
 use http_handler::*;
 use routes::RoutesMap;
 mod controller;
-
+mod utils;
 fn handle_client(mut stream: TcpStream, router: &RoutesMap) -> Result<()> {
     println!("Client Connected");
     let mut buffer = [0; 1000];
@@ -38,6 +38,7 @@ fn handle_client(mut stream: TcpStream, router: &RoutesMap) -> Result<()> {
     println!("{stream_send} Bytes sent to the client");
     Ok(())
 }
+
 fn main() -> Result<()> {
     let mut pub_routes = crate::routes::RoutesMap::new();
     let routes_ref = &mut pub_routes;
@@ -51,7 +52,7 @@ fn main() -> Result<()> {
 
         //        thread::sleep(Duration::from_millis(4000));
 
-        handle_client(stream, &routes_ref).expect("fdfdf");
+        handle_client(stream, &routes_ref)?;
     }
     Ok(())
 }

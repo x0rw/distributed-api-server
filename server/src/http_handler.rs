@@ -1,5 +1,6 @@
 use crate::error::{Error, Result};
 use crate::routes::{RouteType, RoutesMap};
+use crate::utils;
 use core::fmt;
 use std::collections::HashMap;
 use std::fmt::{format, Display};
@@ -8,6 +9,12 @@ use std::fs::write;
 pub enum HttpMethod {
     POST,
     GET,
+}
+
+#[derive(Debug)]
+pub enum Data<'a> {
+    Params(HashMap<&'a str, &'a str>),
+    Body(&'a str),
 }
 #[derive(Debug)]
 pub struct HttpRequest {
@@ -167,7 +174,7 @@ impl HttpBuilder {
                 }
                 RouteType::Controller(func) => {
                     let params = handler.params;
-                    func(params.unwrap_or_default())
+                    func(utils::parse_params(params.unwrap():);
                 }
             },
         };
