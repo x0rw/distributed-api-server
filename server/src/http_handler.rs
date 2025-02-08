@@ -17,10 +17,10 @@ pub enum Data<'a> {
     Body(&'a str),
 }
 #[derive(Debug)]
-pub struct HttpRequest {
+pub struct HttpRequest<'a> {
     pub uri: String,
     pub method: HttpMethod,
-    pub params: Option<Vec<String>>,
+    pub params: Data<'a>,
     pub header: HeaderOptions,
     pub data: Option<String>,
 }
@@ -58,10 +58,10 @@ impl HeaderOptions {
     }
 }
 
-impl HttpRequest {
+impl<'a> HttpRequest<'a> {
     fn new(
         method: HttpMethod,
-        uri: &str,
+        uri: &'a str,
         header_opt: HeaderOptions,
         data: Option<&str>,
     ) -> Result<Self> {
@@ -77,14 +77,11 @@ impl HttpRequest {
             ),
             None => None,
         };
-        let mut url = uri;
-        if let Some(e) = uri.split_once("?") {
-            url = e.0;
-        };
+        let (iniuri, uu) = utils::parse_params(uri);
         Ok(Self {
-            uri: String::from(url),
+            uri: String::from(iniuri),
             method: method,
-            params: e,
+            params: uu,
             header: header_opt,
             data: r,
         })
@@ -97,8 +94,8 @@ impl HttpRequest {
     }
 }
 
-pub fn handle_http(proc: String) -> Result<HttpRequest> {
-    let ref_s = &proc;
+pub fn handle_http<'a>(proc: &'a str) -> Result<HttpRequest<'a>> {
+    let ref_s: &str = proc;
     let mut sp = ref_s.split("\r\n");
     let req = sp.next().ok_or(Error::NullHeaderReq)?;
 
@@ -174,7 +171,7 @@ impl HttpBuilder {
                 }
                 RouteType::Controller(func) => {
                     let params = handler.params;
-                    func(utils::parse_params(params.unwrap():);
+                    func(params)
                 }
             },
         };
@@ -194,7 +191,7 @@ mod tests {
     #[test]
     fn valid_http_get_request() {
         let http_header = String::from("GET / HTTP/1.1\r\nHOST:hello.com");
-        let http_h = handle_http(http_header).unwrap();
+        let http_h = handle_http(&http_header).unwrap();
 
         assert_eq!(http_h.uri, "/");
         assert_eq!(http_h.method, HttpMethod::GET);
@@ -232,7 +229,7 @@ mod tests {
             Accept-Encoding: gzip, deflate, br, zstd\r\n
             Accept-Language: fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7\r\n
             \r\n");
-        let http_h = handle_http(http_header).unwrap();
+        let http_h = handle_http(&http_header).unwrap();
         assert_eq!(http_h.uri, "/f");
         assert_eq!(http_h.data, None);
         assert_eq!(http_h.method, HttpMethod::GET);
@@ -241,7 +238,7 @@ mod tests {
     #[test]
     fn valid_http_post_request() {
         let http_header = String::from("POST / HTTP/1.1\r\n");
-        let http_h = handle_http(http_header).unwrap();
+        let http_h = handle_http(&http_header).unwrap();
 
         assert_eq!(http_h.uri, "/");
         assert_eq!(http_h.method, HttpMethod::POST);
@@ -251,13 +248,13 @@ mod tests {
     #[should_panic]
     fn unvalid_http_method_request() {
         let http_header = String::from("HACK / HTTP/1.1");
-        let _http_h = handle_http(http_header).unwrap();
+        let _http_h = handle_http(&http_header).unwrap();
     }
     #[test]
     #[should_panic]
     fn unvalid_header_size() {
         let http_header = String::from("POST / HTTP/1.1 HELLO");
-        let _http_h = handle_http(http_header).unwrap();
+        let _http_h = handle_http(&http_header).unwrap();
     }
 }
 // testing the http parsing using NetCat

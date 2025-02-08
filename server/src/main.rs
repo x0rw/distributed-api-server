@@ -17,10 +17,11 @@ fn handle_client(mut stream: TcpStream, router: &RoutesMap) -> Result<()> {
     println!("Client Connected");
     let mut buffer = [0; 1000];
     stream.read(&mut buffer)?;
-    let buffer_utf8 = String::from_utf8_lossy(&buffer[..]);
+    let buffer_utf8 = String::from_utf8_lossy(&buffer[..]).to_string();
 
     // println!("{}", buffer_utf8.to_string());
-    let handler = match handle_http(buffer_utf8.to_string()) {
+
+    let handler = match handle_http(&buffer_utf8) {
         Ok(e) => e,
         Err(_) => {
             stream.write(HttpBuilder::build_badrequest().as_bytes())?;
