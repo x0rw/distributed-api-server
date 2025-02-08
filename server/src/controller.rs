@@ -6,14 +6,13 @@ pub struct Controller {
 }
 impl Controller {
     pub fn ArticleController(params: Data) -> String {
-        let res = "HTTP/1.1 200 OK\r\n\r\nART PAGE\n{}".to_string();
+        println!("hrhr {:#?}", params);
+        let mut res = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n".to_string();
         if let Data::Params(e) = params {
-            let res = format!(
-                "HTTP/1.1 200 OK\r\n\r\nART PAGE\n{}",
-                e.iter()
-                    .map(|(k, v)| format!("{k} {v}"))
-                    .collect::<String>()
-            );
+            if let Some(x) = e {
+                let serial = serde_json::to_string(&x).unwrap_or_default();
+                res.push_str(&serial);
+            }
             return res;
         }
 

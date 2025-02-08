@@ -31,6 +31,7 @@ fn handle_client(mut stream: TcpStream, router: &RoutesMap) -> Result<()> {
     let uri = handler.uri.as_ref();
 
     //check if the requested route exist
+    println!("{uri}");
     let route = router.get(uri);
     let builder = HttpBuilder::build(route, handler, router);
 

@@ -13,8 +13,8 @@ pub enum HttpMethod {
 
 #[derive(Debug)]
 pub enum Data<'a> {
-    Params(HashMap<&'a str, &'a str>),
-    Body(&'a str),
+    Params(Option<HashMap<&'a str, &'a str>>),
+    Body(Option<&'a str>),
 }
 #[derive(Debug)]
 pub struct HttpRequest<'a> {
