@@ -4,6 +4,8 @@ use crate::utils;
 use core::fmt;
 use std::collections::HashMap;
 use std::fmt::{format, Display};
+#![feature(let_chains)]
+
 use std::fs::write;
 #[derive(Debug, PartialEq, Eq)]
 pub enum HttpMethod {
