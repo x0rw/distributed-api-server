@@ -2,16 +2,23 @@ use std::collections::HashMap;
 
 use crate::http_handler::{self, Data};
 
-pub fn parse_params(url: &str) -> (&str, Data) {
+pub fn parse_params(url: &str) -> (&str, Option<HashMap<&str, &str>>) {
     let Some((uri, res)) = url.split_once("?") else {
-        return (url, Data::Params(None));
+        return (url, None);
     };
     println!("{url}kkk");
     let m = res
         .split("&")
         .filter_map(|x| x.split_once("="))
         .collect::<HashMap<_, _>>();
-    return (uri, Data::Params(Some(m)));
+    return (uri, Some(m));
+}
+pub fn parse_header(headers: &str) -> HashMap<&str, &str> {
+    let s = headers
+        .split("\r\n")
+        .filter_map(|x| x.split_once(":"))
+        .collect::<HashMap<_, _>>();
+    s
 }
 #[cfg(test)]
 mod tests {
@@ -23,7 +30,7 @@ mod tests {
         let url = "/article?id=43&sort=true";
         let pp = parse_params(url);
         assert_eq!(pp.0, "/article");
-        if let Data::Params(Some(e)) = pp.1 {
+        if let Some(e) = pp.1 {
             let id = e.get("id").unwrap();
             let sort = e.get("sort").unwrap();
             assert_eq!(id.parse::<String>().unwrap(), "43".to_string());
@@ -35,7 +42,7 @@ mod tests {
         let url = "/article?id==43&sort=true=;'";
         let pp = parse_params(url);
         assert_eq!(pp.0, "/article");
-        if let Data::Params(Some(e)) = pp.1 {
+        if let Some(e) = pp.1 {
             let id = e.get("id").unwrap();
             let sort = e.get("sort").unwrap();
             assert_eq!(id.parse::<String>().unwrap(), "=43".to_string());
@@ -47,7 +54,7 @@ mod tests {
         let url = "/art?ds=dd&&?&&&&dsdsd=&&&";
         let pp = parse_params(url);
         assert_eq!(pp.0, "/art");
-        if let Data::Params(Some(e)) = pp.1 {
+        if let Some(e) = pp.1 {
             let id = e.get("ds").unwrap();
             let sort = e.get("dsdsd").unwrap();
             assert_eq!(id.parse::<String>().unwrap(), "dd".to_string());

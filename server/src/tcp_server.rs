@@ -48,11 +48,11 @@ impl TcpServer {
         };
         let uri = handler.uri.as_ref();
 
-        println!("{uri}");
+        // println!("{uri}");
         let route = self.routes.get(uri);
         let builder = HttpBuilder::build(route, handler, &self.routes);
 
-        println!("{}", builder.data);
+        //  println!("{}", builder.data);
         let stream_send = stream.write(builder.data.as_bytes())?;
         println!("{stream_send} Bytes sent to the client");
         Ok(())

@@ -13,63 +13,34 @@ pub enum HttpMethod {
 }
 
 #[derive(Debug)]
-pub enum Data<'a> {
-    Params(Option<HashMap<&'a str, &'a str>>),
-    Body(Option<&'a str>),
+pub struct Data<'a> {
+    params: Option<HashMap<&'a str, &'a str>>,
+    body: Option<&'a str>,
+    header: Option<HeaderOptions>,
 }
+impl<'a> Data<'a> {
+    fn new() -> Self {
+        Self {
+            params: None,
+            body: None,
+            header: None,
+        }
+    }
+}
+
 #[derive(Debug)]
 pub struct HttpRequest<'a> {
     pub uri: String,
     pub method: HttpMethod,
-    pub params: Data<'a>,
-    pub header: HeaderOptions,
-    pub data: Option<String>,
+    pub data: Data<'a>,
 }
-#[derive(Debug)]
-pub struct HeaderOptions {
-    pub header: HashMap<String, String>, //we only own useful Header Features
-}
-impl std::fmt::Display for HeaderOptions {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let b = self
-            .header
-            .iter()
-            .map(|(k, v)| format!("{k} => {v}\n"))
-            .collect::<String>();
-        println!("{b}");
-        Ok(())
-    }
-}
-
-impl HeaderOptions {
-    fn new() -> Self {
-        Self {
-            header: HashMap::new(),
-        }
-    }
-    fn add(&mut self, option: &str, value: &str) {
-        self.header
-            .insert(String::from(option), String::from(value));
-    }
-    fn get_lenght(self) -> Option<u32> {
-        if let Some(e) = self.header.get("data_len") {
-            return Some(e.parse::<u32>().unwrap());
-        }
-        None
-    }
-}
-
 impl<'a> HttpRequest<'a> {
     fn new(
         method: HttpMethod,
         uri: &'a str,
-        header_opt: HeaderOptions,
-        data: Option<&str>,
+        header_opt: Option<HeaderOptions>,
+        data: Option<&'a str>,
     ) -> Result<Self> {
-        let r: Option<String> = match data {
-            Some(e) => Some(e.to_string()),
-            None => None,
-        };
         let e = match uri.split("?").nth(1) {
             Some(e) => Some(
                 e.split("&")
@@ -79,19 +50,16 @@ impl<'a> HttpRequest<'a> {
             None => None,
         };
         let (iniuri, uu) = utils::parse_params(uri);
+        let mut datar = Data::new();
+        datar.params = uu;
+        datar.header = header_opt;
+        datar.body = data;
+
         Ok(Self {
             uri: String::from(iniuri),
             method: method,
-            params: uu,
-            header: header_opt,
-            data: r,
+            data: datar,
         })
-    }
-    pub fn get_data(&self) -> &str {
-        match &self.data {
-            Some(e) => e.as_ref(),
-            None => "",
-        }
     }
 }
 
@@ -170,10 +138,7 @@ impl HttpBuilder {
                 RouteType::Redirect(e, _) => {
                     format!("HTTP/1.1 301 Moved Permanently\r\nLocation:{}", e).to_string()
                 }
-                RouteType::Controller(func) => {
-                    let params = handler.params;
-                    func(params)
-                }
+                RouteType::Controller(func) => func(handler.data),
             },
         };
         match handler.method {
@@ -185,6 +150,40 @@ impl HttpBuilder {
         }
     }
 }
+
+#[derive(Debug)]
+pub struct HeaderOptions {
+    pub header: HashMap<String, String>, //we only own useful Header Features
+}
+impl std::fmt::Display for HeaderOptions {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        let b = self
+            .header
+            .iter()
+            .map(|(k, v)| format!("{k} => {v}\n"))
+            .collect::<String>();
+        println!("{b}");
+        Ok(())
+    }
+}
+impl HeaderOptions {
+    fn new() -> Self {
+        Self {
+            header: HashMap::new(),
+        }
+    }
+    fn add(&mut self, option: &str, value: &str) {
+        self.header
+            .insert(String::from(option), String::from(value));
+    }
+    fn get_lenght(self) -> Option<u32> {
+        if let Some(e) = self.header.get("data_len") {
+            return Some(e.parse::<u32>().unwrap());
+        }
+        None
+    }
+}
+
 #[cfg(test)]
 #[warn(clippy::used_underscore_binding)]
 mod tests {
