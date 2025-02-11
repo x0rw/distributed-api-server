@@ -1,5 +1,6 @@
 use crate::{error::Result, http_handler, Error};
 use std::{collections::HashMap, fs::File, io::Read};
+
 #[derive(Debug)]
 pub enum RouteType {
     Data(String),
@@ -7,6 +8,7 @@ pub enum RouteType {
     NotFound,
     Controller(fn(http_handler::Data) -> String),
 }
+
 pub struct RoutesMap {
     hm: HashMap<String, RouteType>,
     error_route: String,
@@ -16,10 +18,10 @@ impl RoutesMap {
         &mut self,
         route: &str,
         controller: fn(http_handler::Data) -> String,
-    ) -> Result<()> {
+    ) -> &mut Self {
         self.hm
             .insert(route.to_string(), RouteType::Controller(controller));
-        Ok(())
+        self
     }
     pub fn getErrorRoute(&self) -> &str {
         &self.error_route
@@ -30,18 +32,18 @@ impl RoutesMap {
             error_route: "res/404.html".to_string(),
         }
     }
-    pub fn load(&mut self, route: &str, file: &str) -> Result<()> {
+    pub fn load(&mut self, route: &str, file: &str) -> &mut Self {
         println!("Loading {}", file);
-        let mut fi = File::open(file)?;
+        let mut fi = File::open(file).expect("route doesn't exist");
         let mut contents = String::new();
-        fi.read_to_string(&mut contents)?;
+        fi.read_to_string(&mut contents).expect("failed to read");
         self.hm.insert(route.to_string(), RouteType::Data(contents));
-        Ok(())
+        self
     }
-    pub fn error_page(&mut self, route_name: &str, file: &str) -> Result<()> {
-        self.load(route_name, file)?;
+    pub fn error_page(&mut self, route_name: &str, file: &str) -> &mut Self {
+        self.load(route_name, file);
         self.error_route = route_name.to_string();
-        Ok(())
+        self
     }
     pub fn get(&self, k: &str) -> &RouteType {
         println!("Client Requesting: {}", k);
