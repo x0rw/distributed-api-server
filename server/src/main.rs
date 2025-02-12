@@ -4,7 +4,9 @@ mod http_handler;
 mod routes;
 use error::Result;
 use tcp_server::TcpServer;
+
 mod controller;
+mod http_builder;
 mod tcp_server;
 mod utils;
 fn main() -> Result<()> {

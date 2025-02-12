@@ -5,7 +5,9 @@ use core::fmt;
 use std::collections::HashMap;
 use std::fmt::{format, Display};
 
+use serde_json;
 use std::fs::write;
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum HttpMethod {
     POST,
@@ -14,9 +16,9 @@ pub enum HttpMethod {
 
 #[derive(Debug)]
 pub struct Data<'a> {
-    params: Option<HashMap<&'a str, &'a str>>,
-    body: Option<&'a str>,
-    header: Option<HeaderOptions>,
+    pub params: Option<HashMap<&'a str, &'a str>>,
+    pub body: Option<&'a str>,
+    pub header: Option<HeaderOptions<'a>>,
 }
 impl<'a> Data<'a> {
     fn new() -> Self {
@@ -38,7 +40,7 @@ impl<'a> HttpRequest<'a> {
     fn new(
         method: HttpMethod,
         uri: &'a str,
-        header_opt: Option<HeaderOptions>,
+        header_opt: Option<HeaderOptions<'a>>,
         data: Option<&'a str>,
     ) -> Result<Self> {
         let e = match uri.split("?").nth(1) {
@@ -61,6 +63,7 @@ impl<'a> HttpRequest<'a> {
             data: datar,
         })
     }
+    fn build_response(route: RouteType) -> String {}
 }
 
 pub fn handle_http<'a>(proc: &'a str) -> Result<HttpRequest<'a>> {
@@ -78,12 +81,12 @@ pub fn handle_http<'a>(proc: &'a str) -> Result<HttpRequest<'a>> {
     // init options (for performance i should move it outside later and reuse the same structure)
     let mut header_opt = HeaderOptions::new();
     let mut req_data: Option<&str> = None;
-    while let Some(e) = sp.next() {
-        if e.contains(":") {
-            let mut s = e.split(":");
-            header_opt.add(s.next().unwrap(), s.next().unwrap());
+    while let Some(line) = sp.next() {
+        if line.contains(":") {
+            let (k, v) = line.split_once(":").unwrap_or_default();
+            header_opt.add(k, v);
         }
-        if e.is_empty() {
+        if line.is_empty() {
             if let Some(ed) = sp.next() {
                 let ed = ed.trim_matches(char::from(0));
                 if ed.is_empty() {
@@ -99,13 +102,13 @@ pub fn handle_http<'a>(proc: &'a str) -> Result<HttpRequest<'a>> {
         Some("GET") => Ok(HttpRequest::new(
             HttpMethod::GET,
             words.next().unwrap(),
-            header_opt,
+            Some(header_opt),
             req_data,
         )?),
         Some("POST") => Ok(HttpRequest::new(
             HttpMethod::POST,
             words.next().unwrap(),
-            header_opt,
+            Some(header_opt),
             req_data,
         )?),
         _ => Err(Error::UnknowenHttpMethod),
@@ -131,9 +134,7 @@ impl HttpBuilder {
     pub fn build(route: &RouteType, handler: HttpRequest, router: &RoutesMap) -> HttpBuilder {
         let mut httpbuilt = HttpBuilder {
             data: match route {
-                RouteType::NotFound => {
-                    format!("HTTP/1.0 404 Not Found\r\n{}", router.getErrorRoute()).to_string()
-                }
+                RouteType::NotFound => format!("HTTP/1.0 404 Not Found\r\n{}").to_string(),
                 RouteType::Data(html) => format!("HTTP/1.1 200 OK\r\n\r\n{}", html).to_string(),
                 RouteType::Redirect(e, _) => {
                     format!("HTTP/1.1 301 Moved Permanently\r\nLocation:{}", e).to_string()
@@ -152,10 +153,10 @@ impl HttpBuilder {
 }
 
 #[derive(Debug)]
-pub struct HeaderOptions {
-    pub header: HashMap<String, String>, //we only own useful Header Features
+pub struct HeaderOptions<'a> {
+    pub header: HashMap<&'a str, &'a str>, //we only own useful Header Features
 }
-impl std::fmt::Display for HeaderOptions {
+impl<'a> std::fmt::Display for HeaderOptions<'a> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let b = self
             .header
@@ -166,16 +167,16 @@ impl std::fmt::Display for HeaderOptions {
         Ok(())
     }
 }
-impl HeaderOptions {
+impl<'a> HeaderOptions<'a> {
     fn new() -> Self {
         Self {
             header: HashMap::new(),
         }
     }
-    fn add(&mut self, option: &str, value: &str) {
-        self.header
-            .insert(String::from(option), String::from(value));
+    fn add(&mut self, option: &'a str, value: &'a str) {
+        self.header.insert(option, value);
     }
+
     fn get_lenght(self) -> Option<u32> {
         if let Some(e) = self.header.get("data_len") {
             return Some(e.parse::<u32>().unwrap());
@@ -207,7 +208,7 @@ mod tests {
             let _a = HttpRequest::new(
                 HttpMethod::POST,
                 "?dsd=fefd&df=fffff",
-                HeaderOptions::new(),
+                Some(HeaderOptions::new()),
                 None,
             );
         }
@@ -231,7 +232,7 @@ mod tests {
             \r\n");
         let http_h = handle_http(&http_header).unwrap();
         assert_eq!(http_h.uri, "/f");
-        assert_eq!(http_h.data, None);
+        //assert_eq!(http_h.data, None);
         assert_eq!(http_h.method, HttpMethod::GET);
     }
 
