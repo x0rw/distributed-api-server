@@ -1,20 +1,61 @@
-use crate::http_handler::HttpRequest;
-
-
-pub struct HttpBuilder{
-    raw_http: String,
-    handler : HttpRequest,
+use crate::{http_handler::HttpRequest, routes::RouteType};
+pub enum StatusCode {
+    Ok200,
+    NotFound404,
 }
-impl HttpBuilder{
-   fn new()-> Self{
-        Self{
-            raw_http: String::new()
+pub enum Response {
+    JSON(String, StatusCode),
+    HTML(String, StatusCode),
+    TEXT(String, StatusCode),
+}
+impl Response {
+    fn process(self, resp: Response) -> String {
+        match resp {
+            Response::JSON(data, status) => {
+                let mut response = status.to_string();
+                let response = format!(
+                    "{response}\r\n
+                    Content-Length:{}\r\n
+                    Content-Type:application/json\r\n",
+                    data.len()
+                );
+                response
+            }
+            Response::TEXT(data, status) => data,
+            Response::HTML(data, status) => data,
         }
-   } 
-   fn set_handler(mut self, handler: HttpRequest) -> Self{
-    self.handler = handler;
-    self
-   }
+    }
+}
+impl ToString for StatusCode {
+    fn to_string(&self) -> String {
+        match self {
+            StatusCode::Ok200 => "HTTP/1.1 200 OK\r\n".to_string(),
+            StatusCode::NotFound404 => "HTTP/1.1 404 Not Found\r\n".to_string(),
+        }
+    }
+}
+pub struct HttpBuilder<'a> {
+    raw_http: String,
+    handler: HttpRequest<'a>,
+    route: &'a RouteType,
+}
+impl<'a> HttpBuilder<'a> {
+    pub fn new(handler: HttpRequest<'a>, route: &'a RouteType) -> Self {
+        Self {
+            raw_http: String::new(),
+            handler: handler,
+            route: route,
+        }
+    }
 
-    pub fn build(route: &RouteType, handler: HttpRequest, router: &RoutesMap) -> HttpBuilder {
+    pub fn build(mut self) -> String {
+        match self.route {
+            RouteType::Controller(FnController) => FnController(self.handler.data),
+            _ => "not implemented yet".to_string(),
+        }
+    }
+
+    pub fn build_badrequest() -> String {
+        format!("HTTP/1.1 400 Bad Request\r\n").to_string()
+    }
 }

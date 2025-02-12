@@ -6,8 +6,7 @@ pub fn parse_params(url: &str) -> (&str, Option<HashMap<&str, &str>>) {
     let Some((uri, res)) = url.split_once("?") else {
         return (url, None);
     };
-    println!("{url}kkk");
-    let m = res
+    et m = res
         .split("&")
         .filter_map(|x| x.split_once("="))
         .collect::<HashMap<_, _>>();

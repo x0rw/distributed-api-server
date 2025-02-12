@@ -4,7 +4,8 @@ use std::{
 };
 
 use crate::{
-    http_handler::{self, handle_http, HttpBuilder},
+    http_builder::HttpBuilder,
+    http_handler::{self, handle_http},
     routes::{self, RoutesMap},
     Result,
 };
@@ -50,10 +51,10 @@ impl TcpServer {
 
         // println!("{uri}");
         let route = self.routes.get(uri);
-        let builder = HttpBuilder::build(route, handler, &self.routes);
+        let built = HttpBuilder::new(handler, route).build();
 
         //  println!("{}", builder.data);
-        let stream_send = stream.write(builder.data.as_bytes())?;
+        let stream_send = stream.write(built.as_bytes())?;
         println!("{stream_send} Bytes sent to the client");
         Ok(())
     }

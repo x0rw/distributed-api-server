@@ -12,6 +12,7 @@ use std::fs::write;
 pub enum HttpMethod {
     POST,
     GET,
+    Unknowen,
 }
 
 #[derive(Debug)]
@@ -63,7 +64,6 @@ impl<'a> HttpRequest<'a> {
             data: datar,
         })
     }
-    fn build_response(route: RouteType) -> String {}
 }
 
 pub fn handle_http<'a>(proc: &'a str) -> Result<HttpRequest<'a>> {
@@ -116,41 +116,6 @@ pub fn handle_http<'a>(proc: &'a str) -> Result<HttpRequest<'a>> {
 }
 
 //currentlu not in use
-pub enum HttpResponseCode {
-    Ok200,
-    NotFound404,
-    MovedPerm301(String),
-}
-
-//builds http request
-pub struct HttpBuilder {
-    pub data: String,
-}
-
-impl HttpBuilder {
-    pub fn build_badrequest() -> String {
-        format!("HTTP/1.1 400 Bad Request\r\n").to_string()
-    }
-    pub fn build(route: &RouteType, handler: HttpRequest, router: &RoutesMap) -> HttpBuilder {
-        let mut httpbuilt = HttpBuilder {
-            data: match route {
-                RouteType::NotFound => format!("HTTP/1.0 404 Not Found\r\n{}").to_string(),
-                RouteType::Data(html) => format!("HTTP/1.1 200 OK\r\n\r\n{}", html).to_string(),
-                RouteType::Redirect(e, _) => {
-                    format!("HTTP/1.1 301 Moved Permanently\r\nLocation:{}", e).to_string()
-                }
-                RouteType::Controller(func) => func(handler.data),
-            },
-        };
-        match handler.method {
-            HttpMethod::GET => return httpbuilt,
-            HttpMethod::POST => {
-                //httpbuilt.data.push_str(handler.data.unwrap_or_default());
-                return httpbuilt;
-            }
-        }
-    }
-}
 
 #[derive(Debug)]
 pub struct HeaderOptions<'a> {

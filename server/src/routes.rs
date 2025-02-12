@@ -1,4 +1,8 @@
-use crate::{error::Result, http_handler, Error};
+use crate::{
+    error::Result,
+    http_handler::{self, HttpMethod},
+    Error,
+};
 use std::{collections::HashMap, fs::File, io::Read};
 
 #[derive(Debug)]
@@ -10,7 +14,7 @@ pub enum RouteType {
 }
 
 pub struct RoutesMap {
-    hm: HashMap<String, RouteType>,
+    hm: HashMap<String, (HttpMethod, RouteType)>,
     error_route: String,
 }
 impl RoutesMap {
@@ -18,13 +22,13 @@ impl RoutesMap {
         &mut self,
         route: &str,
         controller: fn(http_handler::Data) -> String,
+        method: HttpMethod,
     ) -> &mut Self {
-        self.hm
-            .insert(route.to_string(), RouteType::Controller(controller));
+        self.hm.insert(
+            route.to_string(),
+            (method, RouteType::Controller(controller)),
+        );
         self
-    }
-    pub fn getErrorRoute(&self) -> &str {
-        &self.error_route
     }
     pub fn new() -> Self {
         Self {
@@ -32,16 +36,17 @@ impl RoutesMap {
             error_route: "res/404.html".to_string(),
         }
     }
-    pub fn load(&mut self, route: &str, file: &str) -> &mut Self {
+    pub fn load(&mut self, route: &str, file: &str, method: HttpMethod) -> &mut Self {
         println!("Loading {}", file);
         let mut fi = File::open(file).expect("route doesn't exist");
         let mut contents = String::new();
         fi.read_to_string(&mut contents).expect("failed to read");
-        self.hm.insert(route.to_string(), RouteType::Data(contents));
+        self.hm
+            .insert(route.to_string(), (method, RouteType::Data(contents)));
         self
     }
-    pub fn error_page(&mut self, route_name: &str, file: &str) -> &mut Self {
-        self.load(route_name, file);
+    pub fn error_page(&mut self, route_name: &str, file: &str, method: HttpMethod) -> &mut Self {
+        self.load(route_name, file, method);
         self.error_route = route_name.to_string();
         self
     }
@@ -49,8 +54,8 @@ impl RoutesMap {
         println!("Client Requesting: {}", k);
 
         if let Some(e) = self.hm.get(k) {
-            println!("Found Route: {:?}", e);
-            return e;
+            println!("Found Route: {:?} of type {:?}", e.1, e.0);
+            return &e.1;
         } else {
             return &RouteType::NotFound;
         }
