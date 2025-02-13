@@ -1,5 +1,6 @@
 use crate::{
     error::Result,
+    http_builder::Response,
     http_handler::{self, HttpMethod},
     Error,
 };
@@ -10,7 +11,7 @@ pub enum RouteType {
     Data(String),
     Redirect(String, bool),
     NotFound,
-    Controller(fn(http_handler::Data) -> String),
+    Controller(fn(http_handler::Data) -> Response),
 }
 
 pub struct RoutesMap {
@@ -21,7 +22,7 @@ impl RoutesMap {
     pub fn add_controller(
         &mut self,
         route: &str,
-        controller: fn(http_handler::Data) -> String,
+        controller: fn(http_handler::Data) -> Response,
         method: HttpMethod,
     ) -> &mut Self {
         self.hm.insert(
@@ -54,7 +55,7 @@ impl RoutesMap {
         println!("Client Requesting: {}", k);
 
         if let Some(e) = self.hm.get(k) {
-            println!("Found Route: {:?} of type {:?}", e.1, e.0);
+            //println!("Found Route: {:?} of type {:?}", e.1, e.0);
             return &e.1;
         } else {
             return &RouteType::NotFound;

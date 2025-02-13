@@ -9,16 +9,14 @@ pub enum Response {
     TEXT(String, StatusCode),
 }
 impl Response {
-    fn process(self, resp: Response) -> String {
-        match resp {
+    fn process(self) -> String {
+        match self {
             Response::JSON(data, status) => {
                 let mut response = status.to_string();
-                let response = format!(
-                    "{response}\r\n
-                    Content-Length:{}\r\n
-                    Content-Type:application/json\r\n",
+                let response = format!("{response}\r\nContent-Length : {}\r\nContent-Type : application/json\r\n\r\n{data}",
                     data.len()
                 );
+                println!("{response}");
                 response
             }
             Response::TEXT(data, status) => data,
@@ -29,8 +27,8 @@ impl Response {
 impl ToString for StatusCode {
     fn to_string(&self) -> String {
         match self {
-            StatusCode::Ok200 => "HTTP/1.1 200 OK\r\n".to_string(),
-            StatusCode::NotFound404 => "HTTP/1.1 404 Not Found\r\n".to_string(),
+            StatusCode::Ok200 => "HTTP/1.1 200 OK".to_string(),
+            StatusCode::NotFound404 => "HTTP/1.1 404 Not Found".to_string(),
         }
     }
 }
@@ -50,7 +48,7 @@ impl<'a> HttpBuilder<'a> {
 
     pub fn build(mut self) -> String {
         match self.route {
-            RouteType::Controller(FnController) => FnController(self.handler.data),
+            RouteType::Controller(FnController) => FnController(self.handler.data).process(),
             _ => "not implemented yet".to_string(),
         }
     }

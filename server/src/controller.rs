@@ -11,11 +11,9 @@ pub struct Controller {
 }
 impl Controller {
     pub fn EchoController(data: Data) -> Response {
-        let mut res = "HTTP/1.1 200 OK\r\nContent-Type: application/json\r\n\r\n".to_string();
         let s = data.params.unwrap_or_default();
         let header = data.header;
         let serial = serde_json::to_string(&s).unwrap_or_default();
-        res.push_str(&serial);
-        return Response::JSON(res, StatusCode::Ok200);
+        return Response::JSON(serial, StatusCode::Ok200);
     }
 }
