@@ -8,6 +8,7 @@ use tcp_server::TcpServer;
 
 mod controller;
 mod http_builder;
+mod http_header;
 mod tcp_server;
 mod utils;
 fn main() -> Result<()> {
