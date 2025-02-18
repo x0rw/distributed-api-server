@@ -1,5 +1,12 @@
 use std::{mem, vec};
 
+use serde_json::Error;
+
+use crate::{
+    error::{self, Error, Result},
+    http_builder::HttpBuilder,
+};
+
 pub enum AuthType {
     Bearer,
     Basic,
@@ -8,31 +15,55 @@ pub enum AuthType {
 }
 pub enum ContentType {
     JSON,
+    Unknown,
+}
+impl ContentType {
+    fn from(word: &str) -> Option<ContentType> {
+        match word {
+            "application/json" => Some(ContentType::JSON),
+            _ => None,
+        }
+    }
 }
 struct Auth {
     auth_type: AuthType,
     value: String,
 }
 pub struct HttpHeader {
-    content_type: ContentType,
-    Host: String,
-    Authorization: Auth,
+    content_type: Option<ContentType>,
+    content_lenght: Option<u32>,
+    host: Option<String>,
+    authorization: Option<Auth>,
 }
-enum Test {
-    point2d { x: u32, y: String },
-    point1d { y: String },
-}
-fn process_vec(vector: &mut Vec<u8>) {
-    let tkve = mem::take(vector);
-    return tkve;
-}
-fn main() {
-    let p1 = &mut Test::point2d {
-        x: 43,
-        y: String::from("hello"),
-    };
-    if let Test::point2d { x, y } = p1 {
-        let p2 = Test::point1d { y: mem::take(y) };
-        print!("{y}");
-    };
+impl HttpHeader {
+    fn new() -> Self {
+        Self {
+            content_type: None,
+            content_lenght: None,
+            host: None,
+            authorization: None,
+        }
+    }
+    fn from(&mut self, headers: &str) -> Result<String> {
+        let lines = headers
+            .clone()
+            .split("\r\n")
+            .filter(|&x| !x.is_empty())
+            .collect::<String>();
+        match lines.split_once(":") {
+            Some((key, value)) => {
+                if value.is_empty() || key.is_empty() {
+                    return Err(error::Error::EmptyHeaderField);
+                }
+                match key {
+                    "content_type" => self.content_type = ContentType::from(value),
+                    "content_lenght" => self.content_lenght = value.parse::<u32>().ok(),
+                    _ => {}
+                }
+            }
+            None => return Err(error::Error::InvalidHeader),
+        }
+
+        Ok(String::new())
+    }
 }

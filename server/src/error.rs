@@ -8,6 +8,8 @@ pub enum Error {
     UnknowenHttpMethod,
     NullHeaderReq,
     IO(io::Error),
+    InvalidHeader,
+    EmptyHeaderField,
 }
 impl Error {
     pub fn custom(val: impl std::fmt::Display) -> Self {
