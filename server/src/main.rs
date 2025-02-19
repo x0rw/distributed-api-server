@@ -5,10 +5,9 @@ mod routes;
 use error::Result;
 use http_handler::HttpMethod;
 use tcp_server::TcpServer;
-
 mod controller;
-mod http_builder;
-mod http_header;
+mod http;
+use crate::http::{builder, header};
 mod tcp_server;
 mod utils;
 fn main() -> Result<()> {

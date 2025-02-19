@@ -3,8 +3,8 @@ use std::{mem, vec};
 use serde_json::Error;
 
 use crate::{
+    builder::HttpBuilder,
     error::{self, Result},
-    http_builder::HttpBuilder,
 };
 
 #[derive(Debug)]

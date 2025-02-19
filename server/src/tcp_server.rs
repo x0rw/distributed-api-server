@@ -4,7 +4,7 @@ use std::{
 };
 
 use crate::{
-    http_builder::HttpBuilder,
+    builder::HttpBuilder,
     http_handler::{self, handle_http},
     routes::{self, RoutesMap},
     Result,

@@ -1,6 +1,6 @@
 use crate::{
+    builder::Response,
     error::Result,
-    http_builder::Response,
     http_handler::{self, HttpMethod},
     Error,
 };

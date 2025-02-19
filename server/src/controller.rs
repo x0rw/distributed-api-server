@@ -1,8 +1,8 @@
 use std::collections::HashMap;
 
 use crate::{
+    builder::{Response, StatusCode},
     error::Result,
-    http_builder::{Response, StatusCode},
     http_handler::Data,
     Error,
 };
