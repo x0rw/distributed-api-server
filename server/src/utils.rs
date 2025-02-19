@@ -1,6 +1,6 @@
 use std::collections::HashMap;
 
-use crate::http_handler::{self, Data};
+use crate::handler::{self, Data};
 
 pub fn parse_params(url: &str) -> (&str, Option<HashMap<&str, &str>>) {
     let Some((uri, res)) = url.split_once("?") else {

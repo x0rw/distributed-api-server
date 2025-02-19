@@ -1,4 +1,4 @@
-use crate::{http_handler::HttpRequest, routes::RouteType};
+use crate::{handler::HttpRequest, routes::RouteType};
 pub enum StatusCode {
     Ok200,
     NotFound404,

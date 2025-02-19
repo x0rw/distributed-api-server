@@ -1,7 +1,7 @@
 use crate::{
     builder::Response,
     error::Result,
-    http_handler::{self, HttpMethod},
+    handler::{self, HttpMethod},
     Error,
 };
 use std::{collections::HashMap, fs::File, io::Read};
@@ -11,7 +11,7 @@ pub enum RouteType {
     Data(String),
     Redirect(String, bool),
     NotFound,
-    Controller(fn(http_handler::Data) -> Response),
+    Controller(fn(handler::Data) -> Response),
 }
 
 pub struct RoutesMap {
@@ -22,7 +22,7 @@ impl RoutesMap {
     pub fn add_controller(
         &mut self,
         route: &str,
-        controller: fn(http_handler::Data) -> Response,
+        controller: fn(handler::Data) -> Response,
         method: HttpMethod,
     ) -> &mut Self {
         self.hm.insert(
