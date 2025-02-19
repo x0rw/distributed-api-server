@@ -50,7 +50,6 @@ impl HttpHeader {
     }
     fn from(&mut self, headers: &str) -> Result<String> {
         let lines = headers
-            .clone()
             .split("\r\n")
             .filter(|&x| !x.is_empty())
             .collect::<Vec<&str>>();
@@ -65,6 +64,7 @@ impl HttpHeader {
                     match key {
                         "Content-Type" => self.content_type = ContentType::from(value),
                         "Content-lenght" => self.content_lenght = value.trim().parse::<u32>().ok(),
+                        //to extend
                         _ => {}
                     }
                 }
@@ -77,6 +77,8 @@ impl HttpHeader {
 
 #[cfg(test)]
 mod tests {
+    use crate::error::Error;
+
     use super::*;
     #[test]
     fn test_header() {
@@ -87,5 +89,14 @@ mod tests {
         let x = hb.from(&header);
         println!("===={:#?}", hb);
         assert_eq!(hb.content_lenght, Some(3444));
+    }
+    #[test]
+    #[should_panic]
+    fn test_header_corrupt() {
+        let header = format!(
+            "Transfer-Encoding: chunked\r\nDate: Sat, 28 Nov 2009 04:36:25 GMT\r\nServer Lite"
+        );
+        let mut hb = HttpHeader::new();
+        let x = hb.from(&header).unwrap();
     }
 }
