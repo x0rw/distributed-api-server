@@ -37,6 +37,7 @@ pub struct HttpBuilder<'a> {
     handler: HttpRequest<'a>,
     route: &'a RouteType,
 }
+
 impl<'a> HttpBuilder<'a> {
     pub fn new(handler: HttpRequest<'a>, route: &'a RouteType) -> Self {
         Self {
