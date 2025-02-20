@@ -19,6 +19,6 @@ fn main() -> Result<()> {
             controller::Controller::EchoController,
             handler::HttpMethod::GET,
         );
-    TcpServer::new("127.0.0.1:1111".to_string(), pub_routes).launch()?;
+    TcpServer::new("0.0.0.0:1111".to_string(), pub_routes).launch()?;
     Ok(())
 }
