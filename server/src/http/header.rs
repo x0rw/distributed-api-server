@@ -3,41 +3,39 @@ use std::{mem, vec};
 use serde_json::Error;
 
 use crate::{
+    auth,
     builder::HttpBuilder,
     error::{self, Result},
 };
 
 #[derive(Debug)]
-pub enum AuthType {
-    Bearer,
-    Basic,
-    Digest,
-    OAuth,
-}
-#[derive(Debug)]
 pub enum ContentType {
     JSON,
+    HTML,
     Unknown,
 }
 impl ContentType {
     fn from(word: &str) -> Option<ContentType> {
         match word {
             "application/json" => Some(ContentType::JSON),
+            "document/html" => Some(ContentType::HTML),
             _ => None,
         }
     }
-}
-#[derive(Debug)]
-struct Auth {
-    auth_type: AuthType,
-    value: String,
+    fn into_str(self) -> &'static str {
+        match self {
+            ContentType::JSON => "application/json",
+            ContentType::HTML => "document/html",
+            _ => "Unknown",
+        }
+    }
 }
 #[derive(Debug)]
 pub struct HttpHeader {
     content_type: Option<ContentType>,
     content_lenght: Option<u32>,
     host: Option<String>,
-    authorization: Option<Auth>,
+    authorization: Option<auth::Auth>,
 }
 impl HttpHeader {
     fn new() -> Self {
@@ -46,6 +44,20 @@ impl HttpHeader {
             content_lenght: None,
             host: None,
             authorization: None,
+        }
+    }
+    fn set_content_lenght(mut self, content_len: u32) -> Self {
+        self.content_lenght = Some(content_len);
+        self
+    }
+    fn set_content_type(mut self, cont_type: ContentType) -> Self {
+        self.content_type = Some(cont_type);
+        self
+    }
+    fn build(self) {
+        let mut res = String::new();
+        if let Some(d) = self.content_type {
+            res.push_str(d.into_str());
         }
     }
     fn from(&mut self, headers: &str) -> Result<String> {
@@ -77,8 +89,6 @@ impl HttpHeader {
 
 #[cfg(test)]
 mod tests {
-    use crate::error::Error;
-
     use super::*;
     #[test]
     fn test_header() {

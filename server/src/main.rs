@@ -3,6 +3,7 @@ mod error;
 mod routes;
 use error::Result;
 use tcp_server::TcpServer;
+mod auth;
 mod controller;
 mod http;
 use crate::http::{builder, handler, header};
