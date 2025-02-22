@@ -3,12 +3,14 @@ mod error;
 mod routes;
 use error::Result;
 
+mod main_async;
 use tcp_server::TcpServer;
 mod auth;
 mod controller;
 mod http;
 use crate::http::{builder, handler, header};
 mod tcp_server;
+mod tcp_server_async;
 mod utils;
 fn main() -> Result<()> {
     let mut pub_routes = routes::RoutesMap::new();

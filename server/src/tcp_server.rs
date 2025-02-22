@@ -26,7 +26,6 @@ impl TcpServer {
     }
 
     // all read and write sys calls should be done here
-    // errors propagated from this layer are crucial
     fn handle_client(&self, mut stream: TcpStream) -> Result<()> {
         println!("Client Connected");
         let mut buffer = [0; 1000];
