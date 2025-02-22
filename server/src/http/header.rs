@@ -1,12 +1,6 @@
-use std::{mem, vec};
-
-use serde_json::Error;
-
 use crate::{
     auth,
-    builder::HttpBuilder,
     error::{self, Result},
-    http::header,
 };
 
 #[derive(Debug)]
@@ -36,10 +30,10 @@ impl ContentType {
 }
 #[derive(Debug)]
 pub struct HttpHeader {
-    content_type: Option<ContentType>,
-    content_lenght: Option<u32>,
-    host: Option<String>,
-    authorization: Option<auth::Auth>,
+    pub content_type: Option<ContentType>,
+    pub content_lenght: Option<u32>,
+    pub host: Option<String>,
+    pub authorization: Option<auth::Auth>,
 }
 impl HttpHeader {
     pub fn new() -> Self {
@@ -75,7 +69,7 @@ impl HttpHeader {
         res.push_str("\r\n");
         return res;
     }
-    pub fn from(&mut self, headers: &str) -> Result<String> {
+    pub fn from(mut self, headers: &str) -> Result<Self> {
         let lines = headers
             .split("\r\n")
             .filter(|&x| !x.is_empty())
@@ -96,11 +90,11 @@ impl HttpHeader {
                     }
                 }
                 None => {
-                    //      return Err(error::Error::InvalidHeader);
+                    return Err(error::Error::InvalidHeader);
                 }
             }
         }
-        Ok(String::new())
+        Ok(self)
     }
 }
 //Content-Type: text/html \
@@ -122,7 +116,7 @@ mod tests {
         let http_header = String::from("Host: 127.0.0.1:1111\r\nConnection: keep-alive\r\nsec-ch-ua: \"Not A(Brand\";v=\"8\", \"Chromium\";v=\"132\", \"Google Chrome\";v=\"132\"\r\nsec-ch-ua-mobile: ?0\r\nsec-ch-ua-platform: \"Linux\"\r\nUpgrade-Insecure-Requests: 1\r\nUser-Agent: Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/132.0.0.0 Safari/537.36\r\nAccept: text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7\r\nSec-Fetch-Site: none\r\nSec-Fetch-Mode: navigate\r\nwSec-Fetch-User: ?1\r\nContent-lenght: 2323232\r\nSec-Fetch-Dest: document\r\nAccept-Encoding: gzip, deflate, br, zstd\r\nAccept-Language: fr-FR,fr;q=0.9,en-US;q=0.8,en;q=0.7\r\n\r\n");
         let mut x = HttpHeader::new();
         let dd = x.from(&http_header);
-        println!("\n\n{:#?}\n\n", x);
+        //        println!("\n\n{:#?}\n\n", x);
         //assert_eq!(http_h.data, None);
     }
 
@@ -134,5 +128,6 @@ mod tests {
         );
         let mut hb = HttpHeader::new();
         let x = hb.from(&header).unwrap();
+        assert_eq!(x.content_lenght, None);
     }
 }

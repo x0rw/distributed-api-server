@@ -34,12 +34,12 @@ impl ToString for StatusCode {
 }
 pub struct HttpBuilder<'a> {
     raw_http: String,
-    handler: HttpRequest<'a>,
+    handler: HttpRequest,
     route: &'a RouteType,
 }
 
 impl<'a> HttpBuilder<'a> {
-    pub fn new(handler: HttpRequest<'a>, route: &'a RouteType) -> Self {
+    pub fn new(handler: HttpRequest, route: &'a RouteType) -> Self {
         Self {
             raw_http: String::new(),
             handler: handler,

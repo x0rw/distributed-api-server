@@ -3,12 +3,7 @@ use std::{
     net::{TcpListener, TcpStream},
 };
 
-use crate::{
-    builder::HttpBuilder,
-    handler::{self, handle_http},
-    routes::{self, RoutesMap},
-    Result,
-};
+use crate::{builder::HttpBuilder, handler::handle_http, routes::RoutesMap, Result};
 
 pub struct TcpServer {
     hostaddr: String,
@@ -25,13 +20,13 @@ impl TcpServer {
     }
     pub fn launch(&self) -> Result<()> {
         for stream in self.listener.incoming() {
-            //        thread::sleep(Duration::from_millis(4000));
-
             self.handle_client(stream.unwrap())?;
         }
         Ok(())
     }
 
+    // all read and write sys calls should be done here
+    // errors propagated from this layer are crucial
     fn handle_client(&self, mut stream: TcpStream) -> Result<()> {
         println!("Client Connected");
         let mut buffer = [0; 1000];
@@ -48,14 +43,11 @@ impl TcpServer {
                 return Ok(()); // errors in handle_http arent that serious
             }
         };
-        let uri = handler.uri.as_ref();
-
-        // println!("{uri}");
+        let uri = &handler.req_line.uri;
         let route = self.routes.get(uri);
-        let built = HttpBuilder::new(handler, route).build();
+        let http_response = HttpBuilder::new(handler, route).build();
 
-        //  println!("{}", builder.data);
-        let stream_send = stream.write(built.as_bytes())?;
+        let stream_send = stream.write(http_response.as_bytes())?;
         println!("{stream_send} Bytes sent to the client");
         Ok(())
     }
