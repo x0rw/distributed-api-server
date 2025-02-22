@@ -2,15 +2,17 @@ use std::collections::HashMap;
 
 use crate::handler::{self, Data};
 
-pub fn parse_params(url: &str) -> (&str, Option<HashMap<&str, &str>>) {
+pub fn parse_params(url: &str) -> (String, Option<HashMap<String, String>>) {
+    let url = url.to_string();
     let Some((uri, res)) = url.split_once("?") else {
         return (url, None);
     };
     let m = res
         .split("&")
         .filter_map(|x| x.split_once("="))
+        .map(|(k, v)| (k.to_string(), v.to_string()))
         .collect::<HashMap<_, _>>();
-    return (uri, Some(m));
+    return (uri.to_string(), Some(m));
 }
 pub fn parse_header(headers: &str) -> HashMap<&str, &str> {
     let s = headers

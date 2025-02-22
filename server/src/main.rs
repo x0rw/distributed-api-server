@@ -2,6 +2,7 @@ use std::io::Error;
 mod error;
 mod routes;
 use error::Result;
+
 use tcp_server::TcpServer;
 mod auth;
 mod controller;
@@ -20,6 +21,6 @@ fn main() -> Result<()> {
             controller::Controller::EchoController,
             handler::HttpMethod::GET,
         );
-    TcpServer::new("0.0.0.0:1111".to_string(), pub_routes).launch()?;
+    TcpServer::new("127.0.0.1:1111".to_string(), pub_routes).launch()?;
     Ok(())
 }

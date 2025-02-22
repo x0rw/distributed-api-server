@@ -16,7 +16,7 @@ impl Response {
                 let response = format!("{response}\r\nContent-Length : {}\r\nContent-Type : application/json\r\n\r\n{data}",
                     data.len()
                 );
-                println!("{response}");
+                //println!("{response}");
                 response
             }
             Response::TEXT(data, status) => data,

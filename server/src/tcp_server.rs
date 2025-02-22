@@ -42,8 +42,9 @@ impl TcpServer {
 
         let handler = match handle_http(&buffer_utf8) {
             Ok(e) => e,
-            Err(_) => {
+            Err(e) => {
                 stream.write(HttpBuilder::build_badrequest().as_bytes())?;
+                println!("client handler error {}", e);
                 return Ok(()); // errors in handle_http arent that serious
             }
         };

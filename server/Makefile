@@ -9,3 +9,6 @@ docker-restart:
 
 kill-port:
 	@sudo docker exec -it rustapp sh -c "kill -9 \$$(lsof -t -i:1111)" || true
+run:
+	RUSTFLAGS='-A dead_code -A unused_variables' cargo run 
+
