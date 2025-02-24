@@ -1,0 +1,5 @@
+[workspace]
+members = [
+  "sync-server",
+  "async-server"
+, "base"]

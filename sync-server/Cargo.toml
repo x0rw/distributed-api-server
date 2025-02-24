@@ -1,12 +1,10 @@
 [package]
-name = "server"
+name = "sync-server"
 version = "0.1.0"
 edition = "2021"
 
-[[bin]]
-name = "async_server"
-path = "src/main_async.rs"
 [dependencies]
 serde_json = "1.0.138"
 
+base = { path = "../base" }
 tokio = { version = "1", features = ["full"] }

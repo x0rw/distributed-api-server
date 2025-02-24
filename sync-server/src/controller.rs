@@ -2,9 +2,7 @@ use std::collections::HashMap;
 
 use crate::{
     builder::{Response, StatusCode},
-    error::Result,
     handler::Data,
-    http::header,
     Error,
 };
 pub struct Controller {

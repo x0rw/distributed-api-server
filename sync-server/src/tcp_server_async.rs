@@ -1,4 +1,6 @@
-use crate::{builder::HttpBuilder, handler::handle_http, routes::RoutesMap, Result};
+use base::error::Result;
+use base::http::{builder, handler, header};
+use base::routes::RoutesMap;
 use std::io::{Read, Write};
 use std::sync::Arc;
 use tokio::io::{AsyncBufRead, AsyncReadExt, AsyncWriteExt};
@@ -27,16 +29,12 @@ impl AsyncTcpServer {
         }
     }
 }
-// all read and write sys calls should be done here
-// errors propagated from this layer are crucial
 async fn async_handle_client(route: Arc<RoutesMap>, mut stream: TcpStream) -> Result<()> {
     println!("Client Connected");
     let mut buffer = [0; 1000];
     stream.read(&mut buffer).await?;
     let buffer_utf8 = String::from_utf8_lossy(&buffer[..]).to_string();
-
     // println!("{}", buffer_utf8.to_string());
-
     let handler = match handle_http(&buffer_utf8) {
         Ok(e) => e,
         Err(e) => {
