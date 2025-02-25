@@ -2,34 +2,29 @@ use std::mem;
 use std::pin::Pin;
 use std::{io::Error, ops::DerefMut};
 
+use base::auth;
+use base::error::Result;
 use base::http::handler;
 use base::routes::RoutesMap;
 use tcp_server::TcpServer;
-use tcp_server_async::AsyncTcpServer;
 
-mod auth;
-mod controller;
-mod main_async;
-mod routes;
 mod tcp_server;
-mod tcp_server_async;
-mod utils;
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     let mut pub_routes = RoutesMap::new();
     pub_routes
-        .load("/", "res/index.html", handler::HttpMethod::POST)
-        .load("/article", "res/article.html", handler::HttpMethod::GET)
-        .error_page("404", "res/404.html", handler::HttpMethod::GET)
+        .load("/", "base/res/index.html", handler::HttpMethod::POST)
+        .load(
+            "/article",
+            "base/res/article.html",
+            handler::HttpMethod::GET,
+        )
+        //          .error_page("404", "/404.html", handler::HttpMethod::GET)
         .add_controller(
             "/echo",
-            controller::Controller::EchoController,
+            base::controller::Controller::EchoController,
             handler::HttpMethod::GET,
         );
-    AsyncTcpServer::new("127.0.0.1:1111".to_string(), pub_routes)
-        .await?
-        .launch()
-        .await;
+    TcpServer::new("127.0.0.1:1111".to_string(), pub_routes).launch();
     Ok(())
 }
 /*

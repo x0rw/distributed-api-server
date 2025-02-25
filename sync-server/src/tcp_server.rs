@@ -3,7 +3,11 @@ use std::{
     net::{TcpListener, TcpStream},
 };
 
-use crate::{builder::HttpBuilder, handler::handle_http, routes::RoutesMap, Result};
+use base::{
+    error::Result,
+    http::{builder::HttpBuilder, handler::handle_http},
+    routes::{RouteType, RoutesMap},
+};
 
 pub struct TcpServer {
     hostaddr: String,

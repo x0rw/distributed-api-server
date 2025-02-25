@@ -10,7 +10,7 @@ pub struct Controller {
 impl Controller {
     pub fn EchoController(data: Data) -> Response {
         let header = data.header.unwrap().host;
-        let serial = serde_json::to_string(&header).unwrap_or_default();
+        let serial = serde_json::to_string(&data.params).unwrap_or_default();
         return Response::JSON(serial, StatusCode::Ok200);
     }
 }

@@ -81,9 +81,8 @@ pub fn handle_http(raw_http: &str) -> Result<HttpRequest> {
     let header = raw_http.to_string();
     let (header, body) = header
         .split_once("\r\n\r\n")
-        .ok_or(error::Error::InvalidHeader)
-        .unwrap(); // double crlf
-                   //    if it does have a header then parse it if not parse only the req_line
+        .ok_or(error::Error::InvalidHeader)?; // double crlf
+                                              //    if it does have a header then parse it if not parse only the req_line
     let mut req_line: ReqLine;
     let mut http_header = HttpHeader::new();
     if let Some((nreq_line, rest)) = header.split_once("\r\n") {

@@ -16,7 +16,8 @@ impl Response {
         match self {
             Response::JSON(data, status) => {
                 let mut response = status.to_string();
-                let response = format!("{response}\r\nContent-Length : {}\r\nContent-Type : application/json\r\n\r\n{data}",
+                let response = format!(
+                    "{response}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n{data}",
                     data.len()
                 );
                 //println!("{response}");

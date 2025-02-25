@@ -1,7 +1,8 @@
 use base::error::Result;
-use base::http::{builder, handler, header};
+use base::http::builder::HttpBuilder;
+use base::http::handler::handle_http;
+//use base::http::{builder, handler, header};
 use base::routes::RoutesMap;
-use std::io::{Read, Write};
 use std::sync::Arc;
 use tokio::io::{AsyncBufRead, AsyncReadExt, AsyncWriteExt};
 use tokio::net::TcpListener;
@@ -51,6 +52,7 @@ async fn async_handle_client(route: Arc<RoutesMap>, mut stream: TcpStream) -> Re
 
     let stream_send = stream.write(http_response.as_bytes()).await?;
     println!("{stream_send} Bytes sent to the client");
+    stream.shutdown().await?;
     Ok(())
 }
 
