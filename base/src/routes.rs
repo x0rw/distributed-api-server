@@ -51,7 +51,7 @@ impl RoutesMap {
         self
     }
     pub fn get(&self, k: &str) -> &RouteType {
-        println!("Client Requesting: {}", k);
+        //println!("Client Requesting: {}", k);
 
         if let Some(e) = self.hm.get(k) {
             //println!("Found Route: {:?} of type {:?}", e.1, e.0);

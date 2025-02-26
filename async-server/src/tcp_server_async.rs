@@ -31,7 +31,7 @@ impl AsyncTcpServer {
     }
 }
 async fn async_handle_client(route: Arc<RoutesMap>, mut stream: TcpStream) -> Result<()> {
-    println!("Client Connected");
+    //println!("Client Connected");
     let mut buffer = [0; 1000];
     stream.read(&mut buffer).await?;
     let buffer_utf8 = String::from_utf8_lossy(&buffer[..]).to_string();
@@ -51,10 +51,7 @@ async fn async_handle_client(route: Arc<RoutesMap>, mut stream: TcpStream) -> Re
     let http_response = HttpBuilder::new(handler, route).build();
 
     let stream_send = stream.write(http_response.as_bytes()).await?;
-    println!("{stream_send} Bytes sent to the client");
+    //println!("{stream_send} Bytes sent to the client");
     stream.shutdown().await?;
     Ok(())
 }
-
-#[tokio::main]
-async fn main() {}

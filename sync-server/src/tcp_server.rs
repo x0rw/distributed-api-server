@@ -31,7 +31,7 @@ impl TcpServer {
 
     // all read and write sys calls should be done here
     fn handle_client(&self, mut stream: TcpStream) -> Result<()> {
-        println!("Client Connected");
+        //println!("Client Connected");
         let mut buffer = [0; 1000];
         stream.read(&mut buffer)?;
         let buffer_utf8 = String::from_utf8_lossy(&buffer[..]).to_string();
