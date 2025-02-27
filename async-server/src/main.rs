@@ -1,6 +1,6 @@
-use std::mem;
 use std::pin::Pin;
 use std::{io::Error, ops::DerefMut};
+use std::{mem, thread};
 
 use base::auth;
 use base::error::Result;
@@ -11,8 +11,7 @@ use tcp_server_async::AsyncTcpServer;
 mod tcp_server_async;
 #[tokio::main(flavor = "multi_thread", worker_threads = 8)]
 async fn main() -> Result<()> {
-    let mut pub_routes = RoutesMap::new();
-    pub_routes
+    let mut pub_routes = RoutesMap::new()
         .load("/", "base/res/index.html", handler::HttpMethod::POST)
         .load(
             "/article",

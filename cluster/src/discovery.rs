@@ -12,7 +12,7 @@ struct Service {
 }
 
 struct ServiceRegistry<'a> {
-    services: Vec<&'a ServiceRegistry>,
+    pub services: Vec<&'a Service>,
 }
 impl<'a> ServiceRegistry<'a> {
     fn new() -> Self {
@@ -23,10 +23,10 @@ impl<'a> ServiceRegistry<'a> {
     fn add_service(&mut self, service: &'a Service) {
         self.services.push(service);
     }
-    fn worker() {
+    fn worker(self) {
         loop {
             thread::sleep(Duration::from_millis(5000));
-            for service in ServiceRegistry {
+            for service in self.services.iter() {
                 service.ping();
             }
         }

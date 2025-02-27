@@ -8,21 +8,22 @@ use base::{
     http::{builder::HttpBuilder, handler::handle_http},
     routes::{RouteType, RoutesMap},
 };
+use cluster::node::Node;
 
-pub struct TcpServer {
+pub struct SyncNode {
     hostaddr: String,
     listener: TcpListener,
     routes: RoutesMap,
 }
-impl TcpServer {
-    pub fn new(hostaddr: String, routes: RoutesMap) -> Self {
+impl Node for SyncNode {
+    fn new(hostaddr: String, routes: RoutesMap) -> Self {
         Self {
             hostaddr: "moved".to_string(),
             listener: TcpListener::bind(hostaddr).unwrap(),
             routes,
         }
     }
-    pub fn launch(&self) -> Result<()> {
+    fn launch(self) -> Result<()> {
         for stream in self.listener.incoming() {
             self.handle_client(stream.unwrap())?;
         }

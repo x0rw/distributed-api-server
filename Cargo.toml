@@ -3,5 +3,3 @@ members = [
   "sync-server",
   "async-server"
 , "base", "cluster"]
-[profile.dev]
-rustflags = ["-Adead_code"]

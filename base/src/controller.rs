@@ -14,4 +14,9 @@ impl Controller {
         let serial = serde_json::to_string(&data.params).unwrap_or_default();
         return Response::JSON(serial, StatusCode::Ok200);
     }
+    pub fn PingController(data: Data) -> Response {
+        let ping_ok = "ok";
+        let serial = serde_json::to_string(&ping_ok);
+        return Response::JSON(serial.unwrap_or_default(), StatusCode::Ok200);
+    }
 }

@@ -6,12 +6,12 @@ use base::auth;
 use base::error::Result;
 use base::http::handler;
 use base::routes::RoutesMap;
-use tcp_server::TcpServer;
+use cluster::node::Node;
+use tcp_server::SyncNode;
 
 mod tcp_server;
 fn main() -> Result<()> {
-    let mut pub_routes = RoutesMap::new();
-    pub_routes
+    let mut pub_routes = RoutesMap::new()
         .load("/", "base/res/index.html", handler::HttpMethod::POST)
         .load(
             "/article",
@@ -24,7 +24,7 @@ fn main() -> Result<()> {
             base::controller::Controller::EchoController,
             handler::HttpMethod::GET,
         );
-    TcpServer::new("127.0.0.1:1111".to_string(), pub_routes).launch();
+    SyncNode::new("127.0.0.1:1111".to_string(), pub_routes).launch();
     Ok(())
 }
 /*
