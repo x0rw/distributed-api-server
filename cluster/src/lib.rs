@@ -1,14 +1,10 @@
-pub mod auth;
-pub mod controller;
-pub mod error;
+pub mod discovery;
 pub mod health;
-pub mod http;
-pub mod routes;
-pub mod utils;
-#[cfg(test)]
-fn add(a: u32, b: u32) -> u32 {
-    32
+pub fn add(left: u64, right: u64) -> u64 {
+    left + right
 }
+
+#[cfg(test)]
 mod tests {
     use super::*;
 

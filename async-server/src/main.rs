@@ -31,13 +31,6 @@ async fn main() -> Result<()> {
         .launch()
         .await
         .unwrap();
-    struct tt<T: ?unsized>{
-
-    };
-
-        
-        std::mem::transmute():
-    
 
     Ok(())
 }

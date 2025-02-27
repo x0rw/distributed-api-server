@@ -2,4 +2,4 @@
 members = [
   "sync-server",
   "async-server"
-, "base"]
+, "base", "cluster"]

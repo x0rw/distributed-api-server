@@ -79,8 +79,6 @@ impl ReqLine {
 pub fn handle_http(raw_http: &str) -> Result<HttpRequest> {
     // split the first request line and the header and body from the raw http
     let header = raw_http.to_string();
-    let dd = "heelo";
-    dd.split_once_rep('d');
     let (header, body) = header
         .split_once("\r\n\r\n")
         .ok_or(error::Error::InvalidHeader)?; // double crlf
