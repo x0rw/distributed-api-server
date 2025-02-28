@@ -1,3 +1,5 @@
+use serde::de::value::U8Deserializer;
+
 use crate::error::{self, Result};
 use crate::utils;
 use std::collections::HashMap;
@@ -18,8 +20,8 @@ impl HttpMethod {
             _ => HttpMethod::Unknowen,
         }
     }
-    fn into_str(method: HttpMethod) -> String {
-        match method {
+    pub fn tostring(self) -> String {
+        match self {
             HttpMethod::POST => "POST".to_string(),
             HttpMethod::GET => "GET".to_string(),
             HttpMethod::Unknowen => "Unknowen".to_string(),
@@ -57,10 +59,23 @@ pub struct ReqLine {
     pub http_version: u8,
 }
 impl ReqLine {
+    pub fn new(method: HttpMethod, uri: String, http_version: u8) -> Self {
+        Self {
+            method,
+            uri,
+            http_version,
+        }
+    }
+    pub fn build(self) -> String {
+        let method = self.method.tostring();
+        let uri = self.uri;
+        let http_version = self.http_version;
+        format!("{method} {uri} HTTP/{http_version}")
+    }
     pub fn parse_req_line(req: &str) -> Result<ReqLine> {
         let mut req_iter = req.split(' ');
         let method = req_iter.next().unwrap();
-        let uri = req_iter.next().unwrap().to_string();
+        let uri = req_iter.next().ok_or("error")?.to_string();
         let http_version = req_iter.next().unwrap();
         let d = HttpMethod::from(method);
         Ok(ReqLine {
@@ -86,7 +101,7 @@ pub fn handle_http(raw_http: &str) -> Result<HttpRequest> {
     let mut req_line: ReqLine;
     let mut http_header = HttpHeader::new();
     if let Some((nreq_line, rest)) = header.split_once("\r\n") {
-        req_line = ReqLine::parse_req_line(nreq_line).unwrap();
+        req_line = ReqLine::parse_req_line(nreq_line)?;
         http_header = HttpHeader::new().from(rest).unwrap();
     } else {
         req_line = ReqLine::parse_req_line(header).unwrap();

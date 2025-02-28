@@ -8,8 +8,8 @@ use base::{
     http::{builder::HttpBuilder, handler::handle_http},
     routes::{RouteType, RoutesMap},
 };
-use cluster::node::Node;
 
+use crate::node::Node;
 pub struct SyncNode {
     hostaddr: String,
     listener: TcpListener,
