@@ -1,6 +1,8 @@
-pub mod discovery;
+pub mod async_node;
 pub mod health;
 pub mod node;
+pub mod service;
+pub mod sync_node;
 pub fn add(left: u64, right: u64) -> u64 {
     left + right
 }

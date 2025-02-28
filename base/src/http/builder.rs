@@ -12,7 +12,7 @@ pub enum Response {
     TEXT(String, StatusCode),
 }
 impl Response {
-    fn process(self) -> String {
+    pub fn process(self) -> String {
         match self {
             Response::JSON(data, status) => {
                 let mut response = status.to_string();

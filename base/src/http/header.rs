@@ -44,17 +44,17 @@ impl HttpHeader {
             authorization: None,
         }
     }
-    fn set_content_lenght(mut self, content_len: u32) -> Self {
+    pub fn set_content_lenght(mut self, content_len: u32) -> Self {
         self.content_lenght = Some(content_len);
         self
     }
-    fn set_content_type(mut self, cont_type: ContentType) -> Self {
+    pub fn set_content_type(mut self, cont_type: ContentType) -> Self {
         self.content_type = Some(cont_type);
         self
     }
 
-    //TODO push_str usage is very expensive
-    pub fn build(self) -> String {
+    //TODO push_str usage is expensive
+    pub fn build(self, data: String) -> String {
         let mut res = String::new();
         if let Some(d) = self.content_type {
             res.push_str("Content-Type:");
@@ -67,6 +67,7 @@ impl HttpHeader {
             res.push_str("\r\n");
         }
         res.push_str("\r\n");
+        res.push_str(data.as_ref());
         return res;
     }
     pub fn from(mut self, headers: &str) -> Result<Self> {

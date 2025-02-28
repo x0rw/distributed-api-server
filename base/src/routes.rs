@@ -33,7 +33,7 @@ impl RoutesMap {
     pub fn new() -> Self {
         let mut hm = HashMap::new();
         hm.insert(
-            "ping".to_string(),
+            "/ping".to_string(),
             (
                 HttpMethod::POST,
                 RouteType::Controller(Controller::PingController),
@@ -55,7 +55,7 @@ impl RoutesMap {
         self
     }
     pub fn get(&self, k: &str) -> &RouteType {
-        //println!("Client Requesting: {}", k);
+        println!("Client Requesting: {}", k);
 
         if let Some(e) = self.hm.get(k) {
             //println!("Found Route: {:?} of type {:?}", e.1, e.0);
