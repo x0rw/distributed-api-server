@@ -10,6 +10,7 @@ pub enum Error {
     IO(io::Error),
     InvalidHeader,
     EmptyHeaderField,
+    CloseConnection,
 }
 impl Error {
     pub fn custom(val: impl std::fmt::Display) -> Self {

@@ -58,6 +58,7 @@ pub struct ReqLine {
     pub uri: String,
     pub http_version: u8,
 }
+
 impl ReqLine {
     pub fn new(method: HttpMethod, uri: String, http_version: u8) -> Self {
         Self {
@@ -66,12 +67,14 @@ impl ReqLine {
             http_version,
         }
     }
+
     pub fn build(self) -> String {
         let method = self.method.tostring();
         let uri = self.uri;
         let http_version = self.http_version;
         format!("{method} {uri} HTTP/{http_version}")
     }
+
     pub fn parse_req_line(req: &str) -> Result<ReqLine> {
         let mut req_iter = req.split(' ');
         let method = req_iter.next().unwrap();

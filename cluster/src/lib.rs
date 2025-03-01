@@ -1,4 +1,5 @@
 pub mod async_node;
+pub mod gateway;
 pub mod health;
 pub mod node;
 pub mod service;

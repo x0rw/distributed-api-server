@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
 use std::{thread, time::Duration};
 
 // service registry and discovery
@@ -5,30 +7,47 @@ use std::{thread, time::Duration};
 // after conecting to /register the node will be added to the service registery
 // so that the worker thread can ping it periodically for health
 use crate::health::Health;
-use base::http::builder::{HttpBuilder, Response, StatusCode};
-use base::http::handler::{HttpMethod, ReqLine};
-use base::http::header::{ContentType, HttpHeader};
+use base::routes;
 use serde::{Deserialize, Serialize};
 use serde_json;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Service {
     service_name: String,
-    address: String,
+    node_address: String,
+    inc_address: String,
+    supported_routes: Vec<String>,
     health: Health,
 }
 
-pub struct ServiceRegistry<'a> {
-    pub services: Vec<&'a Service>,
+#[derive(Debug)]
+pub struct ServiceRegistry {
+    pub services: Vec<Service>,
+    pub routes: HashMap<String, Service>,
 }
-impl<'a> ServiceRegistry<'a> {
-    fn new() -> Self {
+impl ServiceRegistry {
+    pub fn new() -> Self {
         Self {
             services: Vec::new(),
+            routes: HashMap::new(),
         }
     }
-    fn add_service(&mut self, service: &'a Service) {
+    pub fn get_route(&self, uri: &str) -> Option<&Service> {
+        let gr = self.routes.get(uri);
+        println!("get route:{}", uri);
+        println!("avaliable routes:{:#?}", self.routes);
+        return gr;
+    }
+    pub fn add_service(&mut self, service: Service) {
+        println!("Registering a new service {}", service.clone().service_name);
+        let s_routes = service.clone().supported_routes;
+        s_routes
+            .into_iter()
+            .map(|x| self.routes.insert(x, service.clone()))
+            .for_each(|_| ());
+
         self.services.push(service);
+        println!("{:#?}", self.routes);
     }
     fn worker(self) {
         loop {
@@ -38,37 +57,60 @@ impl<'a> ServiceRegistry<'a> {
             }
         }
     }
+    pub fn broadcast(sr: Arc<Mutex<ServiceRegistry>>, service: &Service) {
+        println!(
+            "Launching ServiceRegistry broadcast bind at:{}",
+            &service.inc_address
+        );
+        let listener = TcpListener::bind(&service.inc_address).unwrap();
+        for stream in listener.incoming() {
+            let mut buffer = [0u8; 1000];
+            let mut stream = stream.unwrap();
+            let read = stream.read(&mut buffer).unwrap();
+            stream.write("PROTO ok".as_bytes()).unwrap();
+            let buffer = String::from_utf8_lossy(&buffer[..read]);
+            if buffer.starts_with("PROTO") {
+                let buffer = buffer.split_once(' ').unwrap().1;
+                let service: Service = serde_json::from_str(&buffer).unwrap();
+
+                sr.lock().unwrap().add_service(service);
+                //..println!("{:#?}", service);
+            }
+        }
+    }
 }
 
 use std::io::{Read, Write};
-use std::net::TcpStream;
+use std::net::{TcpListener, TcpStream};
 impl Service {
+    // api gateway listener for ServiceRegistry from nodes
+    // hooking to the api gateway
     pub fn discover(&self, host: String) {
         let mut stream = TcpStream::connect(host).unwrap();
         let st = serde_json::to_string(self).unwrap_or_default();
 
-        //build a ping
-        let reql = ReqLine::new(HttpMethod::POST, "/ping".to_string(), 1);
-        let ret = reql.build();
-        let http = HttpHeader::new()
-            .set_content_lenght(st.len() as u32)
-            .set_content_type(ContentType::JSON)
-            .build(st);
-        let http = format!("{ret}\r\n{http}");
-
-        println!("sent: {:#?}", http.clone());
-        let data = stream.write(http.as_bytes());
+        let mut http = "PROTO ".to_string();
+        http.push_str(&st);
+        let data = stream.write(http.as_bytes()).unwrap();
         let mut buf = [0; 100];
         let red = stream.read(&mut buf).unwrap();
-        println!(
-            "recv: {:#?}",
-            String::from_utf8_lossy(&buf).trim().to_string()
-        );
+        println!("recv: {:#?}", String::from_utf8_lossy(&buf[..red]));
     }
-    pub fn init(service_name: &str, address: &str) -> Self {
+    pub fn forward(&self, data: &str) -> String {
+        let mut buffer = [0u8; 1000];
+        println!("Requesting {}", self.node_address.to_string());
+        let mut stream = TcpStream::connect(self.node_address.to_string()).unwrap();
+        let sent_size = stream.write(data.as_bytes()).unwrap();
+        let response = stream.read(&mut buffer).unwrap();
+        return String::from_utf8_lossy(&buffer).into_owned();
+    }
+    //initilise the service
+    pub fn init(service_name: &str, address: &str, supported_routes: Vec<String>) -> Self {
         Self {
             service_name: service_name.to_string(),
-            address: address.to_string(),
+            inc_address: address.to_string(),
+            node_address: address.to_string(),
+            supported_routes,
             health: Health::default(),
         }
     }

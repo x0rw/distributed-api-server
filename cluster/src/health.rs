@@ -1,5 +1,5 @@
 use serde::{Deserialize, Serialize};
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub enum HealthStatus {
     Unhealthy,
     Healthy,
@@ -7,7 +7,7 @@ pub enum HealthStatus {
     Starting,
     OffService,
 }
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Health {
     status: HealthStatus,
 }
