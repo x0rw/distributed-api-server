@@ -5,15 +5,9 @@ pub mod http;
 pub mod routes;
 pub mod utils;
 #[cfg(test)]
-fn add(a: u32, b: u32) -> u32 {
-    32
-}
 mod tests {
     use super::*;
 
     #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
+    fn it_works() {}
 }

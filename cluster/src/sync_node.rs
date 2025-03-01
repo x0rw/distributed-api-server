@@ -1,6 +1,8 @@
 use std::{
     io::{Read, Write},
     net::{TcpListener, TcpStream},
+    panic::UnwindSafe,
+    sync::{Arc, Mutex, RwLock},
 };
 
 use base::{
@@ -9,18 +11,27 @@ use base::{
     routes::{RouteType, RoutesMap},
 };
 
-use crate::node::Node;
+use crate::{
+    node::Node,
+    service::{Service, ServiceRegistry},
+};
 pub struct SyncNode {
     hostaddr: String,
     listener: TcpListener,
     routes: RoutesMap,
+    service_registry: ServiceRegistry,
 }
 impl Node for SyncNode {
-    fn new(hostaddr: String, routes: RoutesMap) -> Self {
+    fn new(
+        hostaddr: String,
+        routes: RoutesMap,
+        service_registry: Arc<Mutex<ServiceRegistry>>,
+    ) -> Self {
         Self {
             hostaddr: "moved".to_string(),
             listener: TcpListener::bind(hostaddr).unwrap(),
             routes,
+            service_registry: ServiceRegistry::new(),
         }
     }
     fn launch(self) -> Result<()> {
@@ -34,10 +45,8 @@ impl Node for SyncNode {
     fn handle_client(&self, mut stream: TcpStream) -> Result<()> {
         //println!("Client Connected");
         let mut buffer = [0; 1000];
-        stream.read(&mut buffer)?;
-        let buffer_utf8 = String::from_utf8_lossy(&buffer[..]).to_string();
-
-        // println!("{}", buffer_utf8.to_string());
+        let size = stream.read(&mut buffer)?;
+        let buffer_utf8 = String::from_utf8_lossy(&buffer[..size]).to_string();
 
         let handler = match handle_http(&buffer_utf8) {
             Ok(e) => e,
@@ -47,10 +56,10 @@ impl Node for SyncNode {
                 return Ok(()); // errors in handle_http arent that serious
             }
         };
+
         let uri = &handler.req_line.uri;
         let route = self.routes.get(uri);
         let http_response = HttpBuilder::new(handler, route).build();
-
         let stream_send = stream.write(http_response.as_bytes())?;
         println!("{stream_send} Bytes sent to the client");
         Ok(())
