@@ -19,16 +19,16 @@ use crate::{
     service::{Service, ServiceRegistry},
 };
 pub struct Gateway {
-    hostaddr: String,
-    listener: TcpListener,
-    routes: RoutesMap,
-    service_registry: Arc<Mutex<ServiceRegistry>>,
+    pub hostaddr: String,
+    pub listener: TcpListener,
+    pub routes: RoutesMap,
+    pub service_registry: Arc<Mutex<ServiceRegistry>>,
 }
 // the gatewat should be able to read the request line and forward the request to the corresponding
 // node in ServiceRegistry
 // i think ServiceRegistry should have fn forward(&self, &str) -> Service;
-impl Node for Gateway {
-    fn new(
+impl Gateway {
+    pub fn new(
         hostaddr: String,
         routes: RoutesMap,
         service_registry: Arc<Mutex<ServiceRegistry>>,
@@ -40,21 +40,21 @@ impl Node for Gateway {
             service_registry,
         }
     }
-    fn launch(self) -> Result<()> {
-        for stream in self.listener.incoming() {
-            self.handle_client(stream.unwrap())?;
+    pub fn launch(self_a: Arc<Self>) -> Result<()> {
+        for stream in self_a.listener.incoming() {
+            self_a.handle_client(stream.unwrap())?;
         }
         Ok(())
     }
 
-    fn handle_client(&self, mut stream: TcpStream) -> Result<()> {
+    pub fn handle_client(&self, mut stream: TcpStream) -> Result<()> {
         //println!("Client Connected");
         let mut buffer = [0; 1000];
         let size = stream.read(&mut buffer)?;
         let buffer_utf8 = String::from_utf8_lossy(&buffer[..size]).to_string();
 
         let (line, rest) = buffer_utf8.split_once("\r\n").unwrap();
-        println!("{line}");
+        //        println!("{line}");
         let rl = ReqLine::parse_req_line(line).unwrap();
         let uri = rl.uri;
         let srr = self.service_registry.lock().unwrap();

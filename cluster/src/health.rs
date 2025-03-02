@@ -9,7 +9,7 @@ pub enum HealthStatus {
 }
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Health {
-    status: HealthStatus,
+    pub status: HealthStatus,
 }
 
 impl Default for Health {
