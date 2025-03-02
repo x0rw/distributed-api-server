@@ -72,7 +72,7 @@ impl ServiceRegistry {
             let read = stream.read(&mut buffer).unwrap();
             let buffer = String::from_utf8_lossy(&buffer[..read]);
 
-            if buffer.starts_with("PROTO") {
+            if buffer.starts_with("REGISTER") {
                 let buffer = buffer.split_once(' ').unwrap().1;
                 let service: Service = serde_json::from_str(&buffer).unwrap();
                 let resp = format!(
@@ -85,7 +85,7 @@ impl ServiceRegistry {
                 //..println!("{:#?}", service);
             } else if buffer.starts_with("HEARTBEAT") {
                 let buffer = buffer.split_once(' ').unwrap().1;
-                println!("Recieved signal at the broadcast: {}", buffer);
+                //println!("Recieved signal at the broadcast: {}", buffer);
             }
         }
     }
@@ -102,12 +102,13 @@ impl Service {
             if let Ok(mut stream) = TcpStream::connect(&host) {
                 let st = serde_json::to_string(self).unwrap_or_default();
 
-                let mut http = "PROTO ".to_string();
+                let mut http = "REGISTER".to_string();
                 http.push_str(&st);
                 let data = stream.write(http.as_bytes()).unwrap();
                 let mut buf = [0; 100];
                 let red = stream.read(&mut buf).unwrap();
                 println!("recv: {:#?}", String::from_utf8_lossy(&buf[..red]));
+                self.heartbeat(host);
                 return Ok(());
             }
             sleep(Duration::from_millis(1000));
@@ -116,8 +117,8 @@ impl Service {
     }
 
     pub fn heartbeat(&self, host: String) {
-        thread::sleep(Duration::from_millis(1000));
         loop {
+            thread::sleep(Duration::from_millis(1000));
             if let Ok(mut stream) = TcpStream::connect(&host) {
                 let mut hb = format!("HEARTBEAT {}", self.service_name);
                 let mut buf = [0u8; 100];
@@ -141,12 +142,17 @@ impl Service {
     }
 
     //initilise the service
-    pub fn init(service_name: &str, address: &str, supported_routes: Vec<String>) -> Self {
-        println!("Started service {} at {} ", service_name, address);
+    pub fn init(
+        service_name: &str,
+        inc_address: &str,
+        node_add: &str,
+        supported_routes: Vec<String>,
+    ) -> Self {
+        println!("Started service {} at {} ", service_name, inc_address);
         Self {
             service_name: service_name.to_string(),
-            inc_address: address.to_string(),
-            node_address: address.to_string(),
+            inc_address: inc_address.to_string(),
+            node_address: node_add.to_string(),
             supported_routes,
             health: Health::default(),
         }

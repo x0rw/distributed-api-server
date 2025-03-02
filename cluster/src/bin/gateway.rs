@@ -15,7 +15,7 @@ fn main() -> Result<()> {
     let sr = Arc::new(Mutex::new(ServiceRegistry::new()));
     let nsr = Arc::clone(&sr);
     thread::spawn(move || {
-        let service = Service::init("node_sevice_1", "127.0.0.1:8888", vec![]);
+        let service = Service::init("gateway_node", "127.0.0.1:8888", "127.0.0.1:8888", vec![]);
         ServiceRegistry::broadcast(nsr, &service);
     });
     let pub_routes = RoutesMap::new();

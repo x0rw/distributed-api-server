@@ -49,7 +49,10 @@ impl Gateway {
         let (line, rest) = buffer_utf8.split_once("\r\n").unwrap();
 
         let rl = ReqLine::parse_req_line(line).unwrap();
-        let uri = rl.uri;
+        let uri = match rl.uri.split_once('?') {
+            Some((f, _)) => f,
+            None => &rl.uri,
+        };
         let srr = self.service_registry.lock().unwrap();
         if let Some(ser) = srr.get_route(&uri) {
             let rec = ser.forward(&buffer_utf8);
