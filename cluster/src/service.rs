@@ -37,8 +37,8 @@ impl ServiceRegistry {
 
     pub fn get_route(&self, uri: &str) -> Option<&Service> {
         let gr = self.routes.get(uri);
-        println!("get route:{}", uri);
-        println!("avaliable routes:{:#?}", self.routes);
+        println!("Requesting route:{}", uri);
+        //println!("avaliable routes:{:#?}", self.routes);
         return gr;
     }
     pub fn add_service(&mut self, service: Service) {
@@ -71,6 +71,7 @@ impl ServiceRegistry {
             let mut stream = stream.unwrap();
             let read = stream.read(&mut buffer).unwrap();
             let buffer = String::from_utf8_lossy(&buffer[..read]);
+
             if buffer.starts_with("PROTO") {
                 let buffer = buffer.split_once(' ').unwrap().1;
                 let service: Service = serde_json::from_str(&buffer).unwrap();
@@ -82,6 +83,9 @@ impl ServiceRegistry {
                 stream.write(resp.as_bytes()).unwrap();
                 sr.lock().unwrap().add_service(service);
                 //..println!("{:#?}", service);
+            } else if buffer.starts_with("HEARTBEAT") {
+                let buffer = buffer.split_once(' ').unwrap().1;
+                println!("Recieved signal at the broadcast: {}", buffer);
             }
         }
     }
@@ -110,12 +114,29 @@ impl Service {
             nb_tries += 1;
         }
     }
+
+    pub fn heartbeat(&self, host: String) {
+        thread::sleep(Duration::from_millis(1000));
+        loop {
+            if let Ok(mut stream) = TcpStream::connect(&host) {
+                let mut hb = format!("HEARTBEAT {}", self.service_name);
+                let mut buf = [0u8; 100];
+                stream.write(hb.as_bytes()).unwrap();
+                let size = stream.read(&mut buf).unwrap();
+                if buf[..size].starts_with(b"OK") {
+                    println!("heartbeat delivered successfully");
+                }
+            }
+        }
+    }
+
     pub fn forward(&self, data: &str) -> String {
         let mut buffer = [0u8; 1000];
-        println!("Requesting {}", self.node_address.to_string());
+        println!("Forwarding to {}", self.node_address.to_string());
         let mut stream = TcpStream::connect(self.node_address.to_string()).unwrap();
         let sent_size = stream.write(data.as_bytes()).unwrap();
-        let response = stream.read(&mut buffer).unwrap();
+        let response_size = stream.read(&mut buffer).unwrap();
+        println!("Recieved response of size {}", response_size);
         return String::from_utf8_lossy(&buffer).into_owned();
     }
 

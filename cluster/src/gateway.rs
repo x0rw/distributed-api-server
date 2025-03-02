@@ -1,23 +1,16 @@
 use std::{
     io::{Read, Write},
     net::{TcpListener, TcpStream},
-    panic::UnwindSafe,
-    sync::{Arc, Mutex, RwLock},
+    sync::{Arc, Mutex},
 };
 
 use base::{
     error::Result,
-    http::{
-        builder::HttpBuilder,
-        handler::{handle_http, ReqLine},
-    },
-    routes::{RouteType, RoutesMap},
+    http::{builder::HttpBuilder, handler::ReqLine},
+    routes::RoutesMap,
 };
 
-use crate::{
-    node::Node,
-    service::{Service, ServiceRegistry},
-};
+use crate::service::ServiceRegistry;
 pub struct Gateway {
     pub hostaddr: String,
     pub listener: TcpListener,
@@ -54,7 +47,7 @@ impl Gateway {
         let buffer_utf8 = String::from_utf8_lossy(&buffer[..size]).to_string();
 
         let (line, rest) = buffer_utf8.split_once("\r\n").unwrap();
-        //        println!("{line}");
+
         let rl = ReqLine::parse_req_line(line).unwrap();
         let uri = rl.uri;
         let srr = self.service_registry.lock().unwrap();
