@@ -42,7 +42,7 @@ impl ServiceRegistry {
         return gr;
     }
     pub fn add_service(&mut self, service: Service) {
-        println!("Registering a new service {}", service.clone().service_name);
+        println!("Registering a new service {:#?}", service.clone());
         let s_routes = service.clone().supported_routes;
         s_routes
             .into_iter()
@@ -102,7 +102,7 @@ impl Service {
             if let Ok(mut stream) = TcpStream::connect(&host) {
                 let st = serde_json::to_string(self).unwrap_or_default();
 
-                let mut http = "REGISTER".to_string();
+                let mut http = "REGISTER ".to_string();
                 http.push_str(&st);
                 let data = stream.write(http.as_bytes()).unwrap();
                 let mut buf = [0; 100];

@@ -10,7 +10,7 @@ use cluster::sync_node::SyncNode;
 
 fn main() -> Result<()> {
     let args = env::args().collect::<Vec<String>>();
-    if args.len() < 5 {
+    if args.len() < 6 {
         println!(
             "Usage: {} node-name node_port node_inc_port gateway_port",
             args[0]
@@ -22,15 +22,17 @@ fn main() -> Result<()> {
     let node_addr = format!("127.0.0.1:{}", &args[2]);
     let node_inc = format!("127.0.0.1:{}", &args[3]);
     let gateway_addr = format!("127.0.0.1:{}", &args[4]);
+    let endpoint = format!("{}", &args[5]);
 
+    println!("endpoint:{}", endpoint);
     //spawn a thread to connect to register the service in the api gateway
-    let supported_routes = vec!["/echo".to_string(), "/hello".to_string()];
+    let supported_routes = vec![endpoint.clone()];
     let service = Service::init(node_name, &node_inc, &node_addr, supported_routes);
     thread::spawn(move || {
         service.discover(gateway_addr.to_string()).unwrap();
     });
     let pub_routes = RoutesMap::new().add_controller(
-        "/echo",
+        endpoint.as_ref(),
         base::controller::Controller::EchoController,
         handler::HttpMethod::GET,
     );
