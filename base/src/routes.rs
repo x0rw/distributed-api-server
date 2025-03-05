@@ -6,10 +6,10 @@ use crate::http::{
     handler::{self, HttpMethod},
 };
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq)]
 pub enum RouteType {
-    Data(String),
-    Redirect(String, bool),
+    //    Data(String),
+    //    Redirect(String, bool),
     NotFound,
     Controller(fn(handler::Data) -> Response),
 }
@@ -41,27 +41,44 @@ impl RoutesMap {
         );
         Self { hm: hm }
     }
-    pub fn load(mut self, route: &str, file: &str, method: HttpMethod) -> Self {
-        println!("Loading {}", file);
-        let mut fi = File::open(file).expect("route doesn't exist");
-        let mut contents = String::new();
-        fi.read_to_string(&mut contents).expect("failed to read");
-        self.hm
-            .insert(route.to_string(), (method, RouteType::Data(contents)));
-        self
-    }
-    pub fn error_page(mut self, route_name: &str, file: &str, method: HttpMethod) -> Self {
-        //       self.load(route_name, file, method);
-        self
-    }
+    //    pub fn load(mut self, route: &str, file: &str, method: HttpMethod) -> Self {
+    //        println!("Loading {}", file);
+    //        let mut fi = File::open(file).expect("route doesn't exist");
+    //        let mut contents = String::new();
+    //        fi.read_to_string(&mut contents).expect("failed to read");
+    //        self.hm
+    //            .insert(route.to_string(), (method, RouteType::Data(contents)));
+    //        self
+    //    }
+
     pub fn get(&self, k: &str) -> &RouteType {
         println!("Client Requesting: {}", k);
-
-        if let Some(e) = self.hm.get(k) {
-            //println!("Found Route: {:?} of type {:?}", e.1, e.0);
-            return &e.1;
-        } else {
-            return &RouteType::NotFound;
+        match self.hm.get(k) {
+            Some((method, rt)) => return rt,
+            None => &RouteType::NotFound,
         }
+    }
+}
+#[cfg(test)]
+mod tests {
+    use super::*;
+    #[test]
+    fn test_route_type_not_found() {
+        let rt = RoutesMap::new();
+        let notd = rt.get("/post");
+        assert_eq!(notd, &RouteType::NotFound);
+    }
+    #[test]
+    fn test_route_type_ping() {
+        let rt = RoutesMap::new();
+        let notd = rt.get("/ping");
+        assert_eq!(notd, &RouteType::Controller(Controller::PingController));
+    }
+    #[test]
+    fn test_echo_controller() {
+        let mut rt =
+            RoutesMap::new().add_controller("/echo", Controller::EchoController, HttpMethod::GET);
+        let notd = rt.get("/echo");
+        assert_eq!(notd, &RouteType::Controller(Controller::EchoController));
     }
 }

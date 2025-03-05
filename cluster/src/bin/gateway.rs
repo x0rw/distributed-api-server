@@ -3,6 +3,7 @@ use std::thread;
 use std::vec;
 
 use cluster::cli::cli_gateway;
+use cluster::gateway;
 use cluster::{
     gateway::Gateway,
     service::{Service, ServiceRegistry},
@@ -21,7 +22,7 @@ fn main() -> Result<()> {
     let pub_routes = RoutesMap::new();
     let gateway = Arc::new(Gateway::new("127.0.0.1:1111".to_string(), pub_routes, sr));
     let gateway_clone = Arc::clone(&gateway);
-    thread::spawn(move || cli_gateway(Arc::clone(&gateway_clone)));
-    Gateway::launch(Arc::clone(&gateway)).unwrap();
+    thread::spawn(move || cli_gateway(gateway_clone.clone()));
+    gateway.clone().launch().unwrap();
     Ok(())
 }

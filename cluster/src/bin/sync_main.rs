@@ -29,7 +29,7 @@ fn main() -> Result<()> {
     let supported_routes = vec![endpoint.clone()];
     let service = Service::init(node_name, &node_inc, &node_addr, supported_routes);
     thread::spawn(move || {
-        service.discover(gateway_addr.to_string()).unwrap();
+        service.discover_gateway(gateway_addr.to_string()).unwrap();
     });
     let pub_routes = RoutesMap::new().add_controller(
         endpoint.as_ref(),

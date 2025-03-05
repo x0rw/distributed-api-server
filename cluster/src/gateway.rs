@@ -33,9 +33,9 @@ impl Gateway {
             service_registry,
         }
     }
-    pub fn launch(self_a: Arc<Self>) -> Result<()> {
-        for stream in self_a.listener.incoming() {
-            self_a.handle_client(stream.unwrap())?;
+    pub fn launch(self: Arc<Self>) -> Result<()> {
+        for stream in self.listener.incoming() {
+            self.handle_client(stream.unwrap())?;
         }
         Ok(())
     }

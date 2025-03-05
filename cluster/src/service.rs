@@ -8,7 +8,7 @@ use std::{thread, time::Duration};
 // after conecting to /register the node will be added to the service registery
 // so that the worker thread can ping it periodically for health
 use crate::health::Health;
-use base::error::Result;
+use base::error::{self, Result};
 use base::routes;
 use serde::{Deserialize, Serialize};
 use serde_json;
@@ -41,6 +41,7 @@ impl ServiceRegistry {
         //println!("avaliable routes:{:#?}", self.routes);
         return gr;
     }
+
     pub fn add_service(&mut self, service: Service) {
         println!("Registering a new service {:#?}", service.clone());
         let s_routes = service.clone().supported_routes;
@@ -60,7 +61,11 @@ impl ServiceRegistry {
             }
         }
     }
-    pub fn broadcast(sr: Arc<Mutex<ServiceRegistry>>, service: &Service) {
+    //if the broadcast doesnt recieve any heartbeat in 5 seconds its removed from the registery
+    pub fn health_checker(&self) {
+        loop {}
+    }
+    pub fn broadcast(sr: Arc<Mutex<ServiceRegistry>>, service: &Service) -> error::Result<()> {
         println!(
             "Launching ServiceRegistry broadcast bind at:{}",
             &service.inc_address
@@ -68,8 +73,8 @@ impl ServiceRegistry {
         let listener = TcpListener::bind(&service.inc_address).unwrap();
         for stream in listener.incoming() {
             let mut buffer = [0u8; 1000];
-            let mut stream = stream.unwrap();
-            let read = stream.read(&mut buffer).unwrap();
+            let mut stream = stream?;
+            let read = stream.read(&mut buffer)?;
             let buffer = String::from_utf8_lossy(&buffer[..read]);
 
             if buffer.starts_with("REGISTER") {
@@ -77,10 +82,10 @@ impl ServiceRegistry {
                 let service: Service = serde_json::from_str(&buffer).unwrap();
                 let resp = format!(
                     "Service registered successfully at host:{} for the routes: {:#}",
-                    service.inc_address.clone(),
-                    service.supported_routes.clone().join(" ")
+                    service.inc_address,
+                    service.supported_routes.join(" ")
                 );
-                stream.write(resp.as_bytes()).unwrap();
+                stream.write(resp.as_bytes())?;
                 sr.lock().unwrap().add_service(service);
                 //..println!("{:#?}", service);
             } else if buffer.starts_with("HEARTBEAT") {
@@ -88,6 +93,7 @@ impl ServiceRegistry {
                 //println!("Recieved signal at the broadcast: {}", buffer);
             }
         }
+        return Ok(());
     }
 }
 
@@ -96,11 +102,11 @@ use std::net::{TcpListener, TcpStream};
 impl Service {
     // api gateway listener for ServiceRegistry from nodes
     // hooking to the api gateway
-    pub fn discover(&self, host: String) -> Result<()> {
+    pub fn discover_gateway(&self, host: String) -> Result<()> {
         let mut nb_tries: u8 = 0;
         loop {
             if let Ok(mut stream) = TcpStream::connect(&host) {
-                let st = serde_json::to_string(self).unwrap_or_default();
+                let st = serde_json::to_string(self).unwrap();
 
                 let mut http = "REGISTER ".to_string();
                 http.push_str(&st);
