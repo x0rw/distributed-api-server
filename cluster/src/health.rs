@@ -20,7 +20,7 @@ impl Default for Health {
     }
 }
 impl Health {
-    fn setStatus(&mut self, status: HealthStatus) {
+    fn _set_statue(&mut self, status: HealthStatus) {
         self.status = status;
     }
 }

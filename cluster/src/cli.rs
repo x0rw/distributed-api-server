@@ -1,9 +1,10 @@
 use crate::gateway::Gateway;
-use std::sync::Arc;
+use std::sync::{Arc, RwLock};
+use std::thread;
 
 use std::io::{self, Write};
-pub fn cli_gateway(gateway: Arc<Gateway>) {
-    loop {
+pub fn cli_gateway(gateway: Arc<RwLock<Gateway>>) {
+    thread::spawn(move || loop {
         io::stdout().flush().unwrap();
         print!("> ");
         let mut input = String::new();
@@ -17,10 +18,10 @@ pub fn cli_gateway(gateway: Arc<Gateway>) {
             println!(
                 "{}",
                 gateway
-                    .service_registry
-                    .lock()
+                    .read()
                     .unwrap()
-                    .services
+                    .service_registry
+                    .as_ref()
                     .iter()
                     .map(|x| format!(
                         "{}   {}  {:#?}",
@@ -36,14 +37,14 @@ pub fn cli_gateway(gateway: Arc<Gateway>) {
             println!(
                 "{:#?}",
                 gateway
-                    .service_registry
-                    .lock()
+                    .read()
                     .unwrap()
-                    .routes
+                    .router
+                    .map
                     .iter()
                     .map(|(k, v)| format!("{} : {}", k, v.service_name))
                     .collect::<Vec<String>>()
             );
         }
-    }
+    });
 }

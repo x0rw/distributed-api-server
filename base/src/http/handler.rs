@@ -1,6 +1,6 @@
 use serde::de::value::U8Deserializer;
 
-use crate::error::{self, Result};
+use crate::error::{self, Error, Result};
 use crate::utils;
 use std::collections::HashMap;
 
@@ -78,13 +78,16 @@ impl ReqLine {
     pub fn parse_req_line(req: &str) -> Result<ReqLine> {
         let mut req_iter = req.split(' ');
         let method = req_iter.next().unwrap();
-        let uri = req_iter.next().ok_or("error")?.to_string();
-        let http_version = req_iter.next().unwrap();
+        let uri = req_iter
+            .next()
+            .ok_or(Error::InvalidHttpReqSize)?
+            .to_string();
+        let http_version = req_iter.next().ok_or(Error::InvalidHttpReqSize);
         let d = HttpMethod::from(method);
         Ok(ReqLine {
             method: d,
             uri,
-            http_version: 9,
+            http_version: 2,
         })
     }
 }
@@ -102,21 +105,24 @@ pub fn handle_http(raw_http: &str) -> Result<HttpRequest> {
         .ok_or(error::Error::InvalidHeader)?; // double crlf
                                               //    if it does have a header then parse it if not parse only the req_line
     let mut req_line: ReqLine;
-    let mut http_header = HttpHeader::new();
+    let mut http_header = None;
     if let Some((nreq_line, rest)) = header.split_once("\r\n") {
         req_line = ReqLine::parse_req_line(nreq_line)?;
-        http_header = HttpHeader::new().from(rest).unwrap();
+        http_header = Some(
+            HttpHeader::new()
+                .from(rest)
+                .map_err(|_| Error::InvalidHeader)?,
+        );
     } else {
-        req_line = ReqLine::parse_req_line(header).unwrap();
+        req_line = ReqLine::parse_req_line(header).map_err(|_| Error::InvalidHeader)?;
     }
 
-    //println!("{:#?}", req_line);
     let (path, rest) = utils::parse_params(&req_line.uri);
     req_line.uri = path;
     let mut data = Data::new();
     data.params = rest;
-    data.header = Some(http_header);
-    data.body = Some(body.to_string());
+    data.header = http_header;
+    data.body = (!body.is_empty()).then(|| body.to_string());
 
     return Ok(HttpRequest {
         req_line: req_line,
@@ -129,7 +135,9 @@ pub fn handle_http(raw_http: &str) -> Result<HttpRequest> {
 #[cfg(test)]
 #[warn(clippy::used_underscore_binding)]
 mod tests {
-    use crate::http::header::HttpHeader;
+    use core::error;
+
+    use crate::{error::Error, http::header::HttpHeader};
 
     use super::*;
     #[test]
@@ -143,17 +151,14 @@ mod tests {
     #[test]
     fn http_req_test() {
         let testvecs = vec![
-            "/?dsd=fefd&df=fffff",
-            "/Article?id=34&username=fdfdf",
-            "/Article?dsd=fefd&df=fffff",
+            "POST /?dsd=fefd&df=fffff HTTP",
+            "POST /Article?id=34&username=fdfdf HTTP",
+            "POST /Article?dsd=fefd&df=fffff HTTP",
+            "POST /echo???====///??><>:LKLK:LK:LK:LK:LK HTTP",
         ];
         for test_uri in testvecs {
-            //let _a = HttpRequest::new(
-            //HttpMethod::POST,
-            //    "?dsd=fefd&df=fffff",
-            //    Some(HeaderOptions::new()),
-            //    None,
-            //);
+            let rl = ReqLine::parse_req_line(test_uri).unwrap();
+            assert_eq!(rl.method, HttpMethod::POST);
         }
     }
     #[test]
@@ -170,8 +175,28 @@ mod tests {
         let http_header = String::from("POST / HTTP/1.1\r\n\r\n");
         let http_h = handle_http(&http_header).unwrap();
 
-        println!("-=-=-=-=-={:#?}-=-==-=-=-=-", http_h);
         assert_eq!(http_h.req_line.method, HttpMethod::POST);
+        assert_eq!(http_h.data.body, None);
+    }
+
+    #[test]
+    fn valid_http_post_request2() {
+        let http_header = String::from("POPO / HTTP/1.1\r\n\r\n");
+        let http_h = handle_http(&http_header).unwrap();
+
+        assert_eq!(http_h.req_line.method, HttpMethod::Unknowen);
+
+        assert_eq!(http_h.data.body, None);
+    }
+
+    #[test]
+    fn valid_http_post_request3() {
+        let http_header = String::from(" HTTP/1.1\r\n\r\n");
+        let http_h = handle_http(&http_header).unwrap();
+
+        assert_eq!(http_h.req_line.method, HttpMethod::Unknowen);
+
+        assert_eq!(http_h.data.body, None);
     }
 
     #[test]

@@ -1,4 +1,3 @@
-use std::env::args;
 use std::{env, thread};
 
 use base::error::Result;
