@@ -1,17 +1,19 @@
-# This description is outdated
-# This description is outdated
-# This description is outdated
-A simple, lightweight HTTP server written in **pure Rust**, designed for handling basic HTTP `GET` and `POST` requests. This server supports routing and preloading routes, making it a great choice for small web applications or as a foundation for building more complex services.
+# Microservice Architecture in Rust
+A microservice architecture in pure Rust is a distributed system where independent services communicate over the network, each handling a specific function. Rust’s performance, safety, and minimal runtime overhead make it ideal for building lightweight, 
+Efficient, and secure microservices. 
+By leveraging async programming, message passing, and API gateways, Rust-based microservices can achieve scalability, fault tolerance, and high concurrency while maintaining strong type safety and memory safety.
 
-## Features
-- ✔️  Supports HTTP `GET` and `POST` requests
-- ✔️  Custom Error handling
-- Each Service(Node) can connect to the Api Gateway
-- Each Service periodically emit a heartbeat to the Gateway to stay alive
-- The Api gateway keeps track of living nodes, every node can register multiple routes
-- The Api gateway can route traffic to a spesific service
-
- multithreading is not implemented yet
+## Cureent Features
+- ✅   HTTP parsing
+- ✅   Each Service(Node) can connect to the Api Gateway
+- ✅   Each Service periodically emit a heartbeat to the Gateway to stay alive
+- ✅   The Api gateway keeps track of living nodes, every node can register multiple endpoints
+- ✅   The Api gateway can route traffic to a specific service
+- ❌   Internal communication between services
+- ❌   Monitoring
+- ❌   Rate limiting and load balancing
+- ❌   SSL encryption layer
+- ❌   Async requests handling(partially but branched out)
 
 ## Getting Started
 
@@ -25,7 +27,8 @@ Clone the repository:
 
 ```bash
 git clone https://github.com/x0rw/Rust-Multithreaded-Server.git
-cd Rust-Multithreaded-Server/server
+cd Rust-Multithreaded-Server/
+make
 ```
 
 Build the project:
@@ -36,13 +39,30 @@ cargo build --release
 
 ### Usage
 
-Run the server:
+Run the Api gateway:
 
 ```bash
-cargo run
+make gateway
 ```
+Run Nodes:
 
-By default, the server listens on `http://localhost:1111`.
+```bash
+make node1
+make node2
+make node3
+make node4
+```
+### Custom usage 
+```bash
+cargo run --bin sync_main
+   Usage: {} node-name node_port node_inc_port gateway_port
+
+cargo run --bin gateway #the gateway by default listen on port 1111
+
+```
+check the EchoController in base/src/controller.rs
+
+By default, the gateway listens on `http://localhost:1111`.
 
 
 ## Contributing
