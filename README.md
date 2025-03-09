@@ -4,11 +4,12 @@
 A simple, lightweight HTTP server written in **pure Rust**, designed for handling basic HTTP `GET` and `POST` requests. This server supports routing and preloading routes, making it a great choice for small web applications or as a foundation for building more complex services.
 
 ## Features
-- **Supports HTTP `GET` and `POST` requests**
-- **Route handling** for defining custom endpoints
-- **Preloading routes** to ensure they are ready at startup
-- Lightweight and efficient, written entirely in Rust without external dependencies
-- Custom Error handling
+- ✔️  Supports HTTP `GET` and `POST` requests
+- ✔️  Custom Error handling
+- Each Service(Node) can connect to the Api Gateway
+- Each Service periodically emit a heartbeat to the Gateway to stay alive
+- The Api gateway keeps track of living nodes, every node can register multiple routes
+- The Api gateway can route traffic to a spesific service
 
  multithreading is not implemented yet
 
