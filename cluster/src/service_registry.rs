@@ -1,3 +1,5 @@
+use base::error::{Error, Result};
+
 use crate::service::Service;
 use std::{collections::HashMap, sync::Arc, thread, time::Duration};
 
@@ -13,12 +15,13 @@ impl Router {
     pub fn add_route(&mut self, route: String, service: Arc<Service>) {
         self.map.insert(route, service);
     }
-    pub fn get_route(&self, uri: &str) -> Option<Arc<Service>> {
-        let gr = self.map.get(uri).unwrap();
-        println!("Requesting route:{}", uri);
+    pub fn get_route(&self, uri: &str) -> Result<&Arc<Service>> {
+        match self.map.get(uri) {
+            Some(e) => Ok(e),
+            None => Err(Error::EmptyHeaderField),
+        }
 
         //println!("avaliable routes:{:#?}", self.routes);
-        return Some(Arc::clone(&gr));
     }
 }
 

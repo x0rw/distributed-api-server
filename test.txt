@@ -1,0 +1,3 @@
+cargo run --bin gateway
+recieved  /echo
+lock aquired

@@ -1,7 +1,7 @@
 use std::{
     io::{Read, Write},
     net::{TcpListener, TcpStream},
-    sync::{Arc, RwLock},
+    sync::{Arc, Mutex, RwLock},
     thread,
 };
 
@@ -14,12 +14,14 @@ use crate::{
     service::Service,
     service_registry::{Router, ServiceRegistry},
 };
+/////Gateway -> Arc
+/////Listener -> mutex
 pub struct Gateway {
     pub interface_addr: String,
     pub inc_address: String,
-    pub listener: TcpListener,
-    pub service_registry: ServiceRegistry,
-    pub router: Router,
+    pub listener: Option<TcpListener>,
+    pub service_registry: Arc<Mutex<ServiceRegistry>>,
+    pub router: Arc<Mutex<Router>>,
 }
 
 // the gatewat should be able to read the request line and forward the request to the corresponding
@@ -35,22 +37,23 @@ impl Gateway {
         Ok(Self {
             interface_addr: interface_addr.to_string(),
             inc_address: inc_address.to_string(),
-            listener: TcpListener::bind(hostaddr)?,
-            service_registry,
-            router: Router::new(),
+            listener: None,
+            service_registry: Arc::new(Mutex::new(service_registry)),
+            router: Arc::new(Mutex::new(Router::new())),
         })
     }
 
     //1 read lock per launch
-    pub fn launch(gw: Arc<RwLock<Self>>) -> Result<()> {
-        for stream in gw.read().unwrap().listener.incoming() {
-            Self::handle_client(Arc::clone(&gw), stream.unwrap())?;
+    pub fn launch(self: Arc<Self>) -> Result<()> {
+        let listener = TcpListener::bind(&self.interface_addr)?;
+        for stream in listener.incoming() {
+            self.clone().handle_client(stream.unwrap())?;
         }
         Ok(())
     }
 
     // 1 read lock
-    pub fn handle_client(gw: Arc<RwLock<Self>>, mut stream: TcpStream) -> Result<()> {
+    pub fn handle_client(self: Arc<Self>, mut stream: TcpStream) -> Result<()> {
         //println!("Client Connected");
         let mut buffer = [0; 1000];
         let size = stream.read(&mut buffer)?;
@@ -66,13 +69,18 @@ impl Gateway {
             Some((f, _)) => f,
             None => &rl.uri,
         };
-        let router = &gw.read().unwrap().router;
-        if let Some(ser) = router.get_route(&uri) {
+
+        println!("recieved  {}", uri);
+        let gw_read = &self.router.lock().unwrap();
+
+        println!("lock aquired");
+        if let Ok(ser) = gw_read.get_route(&uri) {
+            println!("forwarding {:#?}", ser);
             let rec = ser.forward(&buffer_utf8);
-            println!("forwarding {}", rec.clone());
             let stream_send = stream.write(rec.as_bytes())?;
             println!("{stream_send} Bytes sent to the client");
         } else {
+            println!("failed");
             stream.write(HttpBuilder::build_badrequest().as_bytes())?;
         }
         //        println!("{:#?}", self.service_registry.services);
@@ -80,13 +88,13 @@ impl Gateway {
         Ok(())
     }
 
-    pub fn broadcast(gw: Arc<RwLock<Self>>) -> Result<()> {
+    pub fn broadcast(self: Arc<Self>) -> Result<()> {
         let _d = thread::spawn(move || {
             println!(
                 "Launching ServiceRegistry broadcast bind at:{}",
-                &gw.read().unwrap().inc_address
+                &self.inc_address
             );
-            let listener = TcpListener::bind(&gw.read().unwrap().inc_address).unwrap();
+            let listener = TcpListener::bind(&self.inc_address).unwrap();
 
             //Router
             //ServiceRegistry
@@ -117,15 +125,15 @@ impl Gateway {
                         match ns.write(resp.as_bytes()) {
                             Ok(_size) => {
                                 //add to ServiceRegistry
-                                let mut gwo = gw.write().unwrap();
-                                let ser = gwo.service_registry.register(service.clone());
+                                let mut router = self.service_registry.lock().unwrap();
+                                let ser = router.register(service.clone());
                                 let _ = ser
                                     .supported_routes
                                     .iter()
                                     .map(|x| {
-                                        gw.write()
+                                        self.router
+                                            .lock()
                                             .unwrap()
-                                            .router
                                             .add_route(x.clone(), service.clone())
                                     })
                                     .collect::<Vec<_>>();

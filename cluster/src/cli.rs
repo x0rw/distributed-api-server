@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 use std::thread;
 
 use std::io::{self, Write};
-pub fn cli_gateway(gateway: Arc<RwLock<Gateway>>) {
+pub fn cli_gateway(gateway: Arc<Gateway>) {
     thread::spawn(move || loop {
         io::stdout().flush().unwrap();
         print!("> ");
@@ -18,9 +18,9 @@ pub fn cli_gateway(gateway: Arc<RwLock<Gateway>>) {
             println!(
                 "{}",
                 gateway
-                    .read()
-                    .unwrap()
                     .service_registry
+                    .lock()
+                    .unwrap()
                     .as_ref()
                     .iter()
                     .map(|x| format!(
@@ -37,9 +37,9 @@ pub fn cli_gateway(gateway: Arc<RwLock<Gateway>>) {
             println!(
                 "{:#?}",
                 gateway
-                    .read()
-                    .unwrap()
                     .router
+                    .lock()
+                    .unwrap()
                     .map
                     .iter()
                     .map(|(k, v)| format!("{} : {}", k, v.service_name))

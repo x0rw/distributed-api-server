@@ -11,17 +11,17 @@ fn main() -> Result<()> {
     match Gateway::new(
         "127.0.0.1:1111".to_string(),
         sr,
-        "127.0.0.1:8888",
+        "127.0.0.1:1111",
         "127.0.0.1:8888",
     ) {
         Ok(e) => {
-            let gateway = Arc::new(RwLock::new(e));
-            Gateway::broadcast(Arc::clone(&gateway)).unwrap();
-            cli_gateway(Arc::clone(&gateway));
-            Gateway::launch(Arc::clone(&gateway)).unwrap();
+            let gateway = Arc::new(e);
+            //Gateway::broadcast(Arc::clone(&gateway)).unwrap();
+            //cli_gateway(Arc::clone(&gateway));
+            Gateway::launch(Arc::clone(&gateway))?;
         }
         Err(err) => {
-            println!("{}", err);
+            println!("error gateway.rs:{}", err);
         }
     }
 
