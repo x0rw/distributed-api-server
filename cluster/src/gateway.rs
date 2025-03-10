@@ -14,8 +14,7 @@ use crate::{
     service::Service,
     service_registry::{Router, ServiceRegistry},
 };
-/////Gateway -> Arc
-/////Listener -> mutex
+
 pub struct Gateway {
     pub interface_addr: String,
     pub inc_address: String,
@@ -76,7 +75,7 @@ impl Gateway {
         println!("lock aquired");
         if let Ok(ser) = gw_read.get_route(&uri) {
             println!("forwarding {:#?}", ser);
-            let rec = ser.forward(&buffer_utf8);
+            let rec = Service::forward(ser, &buffer_utf8);
             let stream_send = stream.write(rec.as_bytes())?;
             println!("{stream_send} Bytes sent to the client");
         } else {
@@ -113,21 +112,24 @@ impl Gateway {
 
                     if buffer.starts_with("REGISTER") {
                         let buffer = buffer.split_once(' ').unwrap().1;
-                        let service: Arc<Service> =
-                            Arc::new(serde_json::from_str(&buffer).unwrap());
 
-                        let resp = format!(
-                            "Service registered successfully at host:{} for the routes: {:#}",
-                            service.inc_address,
-                            service.supported_routes.join(" ")
-                        );
+                        let service: Arc<RwLock<Service>> =
+                            Arc::new(RwLock::new(serde_json::from_str(&buffer).unwrap()));
 
-                        match ns.write(resp.as_bytes()) {
+                        //                        let resp = format!(
+                        //                            "Service registered successfully at host:{} for the routes: {:#}",
+                        //                            service.inc_address,
+                        //                            service.supported_routes.join(" ")
+                        //                        );
+
+                        match ns.write("[Gateway] : Registered successfully".as_bytes()) {
                             Ok(_size) => {
                                 //add to ServiceRegistry
                                 let mut router = self.service_registry.lock().unwrap();
                                 let ser = router.register(service.clone());
                                 let _ = ser
+                                    .read()
+                                    .unwrap()
                                     .supported_routes
                                     .iter()
                                     .map(|x| {
@@ -143,7 +145,13 @@ impl Gateway {
                         };
                     } else if buffer.starts_with("HEARTBEAT") {
                         let _buffer = buffer.split_once(' ').unwrap().1;
-                        println!("Recieved signal at the broadcast: {}", buffer);
+                        let mut sr_lock = self.service_registry.lock().unwrap();
+                        println!("found service: {:#?}", _buffer);
+                        let service = sr_lock.find_service(_buffer).unwrap();
+                        // update status
+                        //service.update_time();
+
+                        println!("found service: {:#?}", service);
                     }
                 }
             }

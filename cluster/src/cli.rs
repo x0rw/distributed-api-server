@@ -21,14 +21,17 @@ pub fn cli_gateway(gateway: Arc<Gateway>) {
                     .service_registry
                     .lock()
                     .unwrap()
-                    .as_ref()
+                    .services
                     .iter()
-                    .map(|x| format!(
-                        "{}   {}  {:#?}",
-                        x.service_name.clone(),
-                        x.inc_address.clone(),
-                        x.health.status.clone(),
-                    ))
+                    .map(|x| {
+                        let x = x.read().unwrap();
+                        format!(
+                            "{}   {}  {:#?}",
+                            x.service_name.clone(),
+                            x.inc_address.clone(),
+                            x.health.status.clone(),
+                        )
+                    })
                     .collect::<Vec<String>>()
                     .join("\r")
             );
@@ -42,7 +45,7 @@ pub fn cli_gateway(gateway: Arc<Gateway>) {
                     .unwrap()
                     .map
                     .iter()
-                    .map(|(k, v)| format!("{} : {}", k, v.service_name))
+                    .map(|(k, v)| format!("{} : {:#?}", k, v.read().unwrap()))
                     .collect::<Vec<String>>()
             );
         }

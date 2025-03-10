@@ -4,7 +4,7 @@ use crate::service::Service;
 use std::{collections::HashMap, sync::Arc, thread, time::Duration};
 
 pub struct Router {
-    pub map: HashMap<String, Arc<Service>>,
+    pub map: HashMap<String, Arc<RwLock<Service>>>,
 }
 impl Router {
     pub fn new() -> Self {
@@ -12,10 +12,10 @@ impl Router {
             map: HashMap::new(),
         }
     }
-    pub fn add_route(&mut self, route: String, service: Arc<Service>) {
+    pub fn add_route(&mut self, route: String, service: Arc<RwLock<Service>>) {
         self.map.insert(route, service);
     }
-    pub fn get_route(&self, uri: &str) -> Result<&Arc<Service>> {
+    pub fn get_route(&self, uri: &str) -> Result<&Arc<RwLock<Service>>> {
         match self.map.get(uri) {
             Some(e) => Ok(e),
             None => Err(Error::EmptyHeaderField),
@@ -24,28 +24,28 @@ impl Router {
         //println!("avaliable routes:{:#?}", self.routes);
     }
 }
+use std::sync::RwLock;
 
 #[derive(Debug)]
 pub struct ServiceRegistry {
-    pub services: Vec<Arc<Service>>,
+    pub services: Vec<Arc<RwLock<Service>>>,
 }
 
 impl ServiceRegistry {
-    pub fn as_ref(&self) -> Vec<&Service> {
+    pub fn find_service(&mut self, service_id: &str) -> Option<&Arc<RwLock<Service>>> {
         self.services
             .iter()
-            .map(|x| &**x) //alternatives,.as_ref()
-            //or map(Arc::as_ref)
-            .collect::<Vec<&Service>>()
+            .find(|&e| e.read().unwrap().service_name == service_id)
     }
     pub fn new() -> Self {
         Self {
             services: Vec::new(),
         }
     }
-    pub fn register(&mut self, service: Arc<Service>) -> &Service {
+
+    pub fn register(&mut self, service: Arc<RwLock<Service>>) -> &Arc<RwLock<Service>> {
         println!("Registering a new service {:#?}", service.clone());
-        self.services.push(service.clone());
+        self.services.push(service);
         return self.services.last().unwrap();
 
         //        let s_routes = service.clone().supported_routes;

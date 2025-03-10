@@ -16,8 +16,8 @@ fn main() -> Result<()> {
     ) {
         Ok(e) => {
             let gateway = Arc::new(e);
-            //Gateway::broadcast(Arc::clone(&gateway)).unwrap();
-            //cli_gateway(Arc::clone(&gateway));
+            Gateway::broadcast(Arc::clone(&gateway)).unwrap();
+            cli_gateway(Arc::clone(&gateway));
             Gateway::launch(Arc::clone(&gateway))?;
         }
         Err(err) => {

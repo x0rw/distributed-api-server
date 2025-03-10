@@ -1,5 +1,5 @@
 use std::thread::sleep;
-use std::time::SystemTime;
+use std::time::Instant;
 use std::{thread, time::Duration};
 
 // service registry and discovery
@@ -10,19 +10,25 @@ use crate::health::Health;
 use base::error::Result;
 use serde::{Deserialize, Serialize};
 use serde_json;
+use std::sync::{Arc, RwLock};
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Service {
     pub service_name: String,
     pub node_address: String,
     pub inc_address: String,
     pub supported_routes: Vec<String>,
     pub health: Health,
-    pub timestamp: SystemTime,
+    #[serde(skip)]
+    pub timestamp: Option<Instant>,
 }
 use std::io::{Read, Write};
 use std::net::TcpStream;
 impl Service {
+    pub fn update_time(&mut self) {
+        todo!()
+    }
+
     // api gateway listener for ServiceRegistry from nodes
     // hooking to the api gateway
     pub fn discover_gateway(&self, host: String) -> Result<()> {
@@ -60,10 +66,11 @@ impl Service {
         }
     }
 
-    pub fn forward(&self, data: &str) -> String {
+    pub fn forward(slf: &Arc<RwLock<Service>>, data: &str) -> String {
+        let slf = slf.read().unwrap();
         let mut buffer = [0u8; 1000];
-        println!("Forwarding to {}", self.node_address.to_string());
-        let mut stream = TcpStream::connect(self.node_address.to_string()).unwrap();
+        println!("Forwarding to {}", slf.node_address.to_string());
+        let mut stream = TcpStream::connect(slf.node_address.to_string()).unwrap();
         let _sent_size = stream.write(data.as_bytes()).unwrap();
         let response_size = stream.read(&mut buffer).unwrap();
         println!("Recieved response of size {}", response_size);
@@ -84,7 +91,7 @@ impl Service {
             node_address: node_add.to_string(),
             supported_routes,
             health: Health::default(),
-            timestamp: SystemTime::now(),
+            timestamp: Some(Instant::now()),
         }
     }
     pub fn ping(&self) {
