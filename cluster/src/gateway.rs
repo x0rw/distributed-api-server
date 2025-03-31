@@ -87,6 +87,7 @@ impl Gateway {
         Ok(())
     }
 
+    // Listening for Registration requests and heartbeats
     pub fn broadcast(self: Arc<Self>) -> Result<()> {
         let _d = thread::spawn(move || {
             println!(

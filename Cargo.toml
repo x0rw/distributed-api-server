@@ -1,3 +1,5 @@
 [workspace]
-members = [
- "base", "cluster"]
+members = [ "wasp-core" ]
+
+[profile.dev]
+debug = true
