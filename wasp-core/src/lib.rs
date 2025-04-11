@@ -1,3 +1,4 @@
+pub mod discovery;
 pub mod http;
 
 pub use http::request;

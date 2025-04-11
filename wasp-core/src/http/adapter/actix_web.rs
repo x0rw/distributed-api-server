@@ -1,15 +1,17 @@
 use std::net::SocketAddr;
 
+use super::{ServerAdapter, WaspHandler};
 use crate::http::response::Response;
-use crate::http::{ServerAdapter, WaspHandler};
+use crate::http::HttpMethod;
 use crate::{http::request::Request, response};
 use actix_web::{self, web, App, HttpRequest, HttpResponse, HttpServer, Responder};
+
 pub struct ActixAdapter();
 impl ServerAdapter for ActixAdapter {
     type RequestType = actix_web::HttpRequest;
     type ResponseType = actix_web::HttpResponse;
 
-    async fn convert_request(req: actix_web::HttpRequest) -> Request {
+    async fn convert_request(req: Self::RequestType) -> Request {
         let path = req.path().to_string();
         let method = req.method().to_string();
         let mut abs_req = Request::new(path, method);
@@ -32,7 +34,28 @@ impl ServerAdapter for ActixAdapter {
         )
         .body(wasp_response.body);
     }
-    async fn run(routes: Vec<(&'static str, &'static str, WaspHandler)>, address: SocketAddr) {
-        unimplemented!()
+
+    async fn run(routes: Vec<(&'static str, HttpMethod, WaspHandler)>, address: SocketAddr) {
+        let server = HttpServer::new(move || {
+            let mut app = App::new();
+
+            for (path, method, handler) in &routes {
+                let handler = *handler;
+                app = match *method {
+                    HttpMethod::POST => app.route(
+                        *path,
+                        web::post().to(move |req| ActixAdapter::handler_wrapper(req, handler)),
+                    ),
+                    HttpMethod::GET => app.route(
+                        *path,
+                        web::get().to(move |req| ActixAdapter::handler_wrapper(req, handler)),
+                    ),
+                    _ => panic!("un"),
+                }
+            }
+            app
+        });
+        println!("Server running at {}, powered by Actix-web", address);
+        server.bind(address).unwrap().run().await.unwrap();
     }
 }

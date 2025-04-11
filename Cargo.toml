@@ -1,5 +1,6 @@
 [workspace]
-members = [ "wasp-core" ]
+members = [ "wasp-core"]
+resolver = "2" 
 
 [profile.dev]
 debug = true

@@ -1,30 +1,36 @@
 pub mod adapter;
+pub mod client;
 pub mod request;
 pub mod response;
+use adapter::ServerAdapter;
+use std::{fmt, net::SocketAddr};
+
 pub use actix_web;
-use request::Request;
-use response::Response;
-pub use std::net::SocketAddr;
-
-pub type WaspHandler = fn(Request) -> Response;
-
-trait ServerAdapter {
-    type RequestType;
-    type ResponseType;
-    async fn convert_request(req: Self::RequestType) -> Request;
-    async fn handler_wrapper(req: Self::RequestType, handler: WaspHandler) -> Self::ResponseType;
-    async fn run(routes: Vec<(&'static str, &'static str, WaspHandler)>, address: SocketAddr);
+use adapter::WaspHandler;
+#[derive(Debug, Clone)]
+pub enum HttpMethod {
+    POST,
+    GET,
 }
-
-#[derive(Debug)]
-enum WaspRunner {
+impl fmt::Display for HttpMethod {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let method_str = match *self {
+            HttpMethod::GET => "GET",
+            HttpMethod::POST => "POST",
+            _ => "idk",
+        };
+        write!(f, "{}", method_str)
+    }
+}
+#[derive(Debug, Clone)]
+pub enum WaspRunner {
     ActixWeb,
     Custom,
 }
 
 pub struct WaspServer {
     address: SocketAddr,
-    routes: Vec<(&'static str, &'static str, WaspHandler)>,
+    routes: Vec<(&'static str, HttpMethod, WaspHandler)>,
 }
 
 impl WaspServer {
@@ -35,7 +41,7 @@ impl WaspServer {
             routes: Vec::new(),
         })
     }
-    pub fn add_route(&mut self, path: &'static str, method: &'static str, handler: WaspHandler) {
+    pub fn add_route(&mut self, path: &'static str, method: HttpMethod, handler: WaspHandler) {
         self.routes.push((path, method, handler));
     }
     // TODO(x0rw): add a parameter that can specify the underlaying framework
