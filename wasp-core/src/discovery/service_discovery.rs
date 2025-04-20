@@ -15,6 +15,11 @@ pub trait ServiceDiscovery {
         service_name: &str,
         tags: Option<&Vec<String>>,
     ) -> std::io::Result<Vec<ServiceInstance>>;
+    fn discover_service(
+        &self,
+        service_name: &str,
+        tags: Option<&Vec<String>>,
+    ) -> std::io::Result<Vec<ServiceInstance>>;
 }
 #[derive(Debug, Clone)]
 pub struct ServiceInstance {

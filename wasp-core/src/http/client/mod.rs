@@ -1,1 +1,1 @@
-pub mod minreq_adapter;
+//pub mod minreq_adapter;
